@@ -1,0 +1,285 @@
+.udashboard {
+    font-size: 1.2em;
+    color: #030303;
+}
+
+.udashbaord h2:before {
+    content: '\f179';
+    display: inline-block;
+    -webkit-font-smoothing: antialiased;
+    font: normal 29px/1 'dashicons';
+    vertical-align: middle;
+    margin-right: 0.3em;
+}
+
+.placeholder {
+    opacity: 0;
+    filter: alpha(opacity=40);
+}
+
+img.placeholder{
+    width: 123px;
+    height: 123px;
+}
+
+div.placeholder {
+    width: 124px;
+    height: 124px;
+    display: block;
+    position: relative;
+}
+
+.paypal_button_style {
+    background-color: #00A6CC;
+    border-color: #00A6CC;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border-radius: 3px;
+    line-height: 1.5em;
+    text-decoration: none;
+}
+
+.tabdivouter {
+    width: 600px;
+    margin: 0 auto;
+}
+
+div.tabinner-image {
+    text-align: center;
+    margin-top: 21px;
+    height: 128px;
+}
+
+div.tabinner-label {
+    text-align: center;
+    margin-top: 21px;
+}
+
+div.tabdivinner-left {
+    float: left;
+    margin: 0 auto;
+    width: 50%;
+}
+
+div.tabdivinner {
+    text-align: center;
+    margin: 0 auto;
+    width: 100%;
+}
+
+a.renew_buttonStyle:hover {
+    background-color: #00748E;
+    text-decoration: underline;
+}
+
+div.paypal {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+fieldset.renew_udashbaord {
+    border: 1px solid;
+    padding: 15px;
+}
+
+form.paypal {
+    width: 90%;
+}
+img.md_image{
+    width: 123px;
+    height: 123px;
+}
+
+img#md_renewal_image{
+    width: 123px;
+    height: 123px;
+}
+/** ###############################################
+ *  # label and input settings for Primary Member
+ *  ###############################################
+ */
+
+label.ud-renewal-label-col1  {
+    margin-left: .5em;
+    width: 10em;
+}
+
+input.ud-renewal-input-col1 {
+    margin-left: .5em;
+    width: 10em;
+}
+
+label.ud-renewal-label-col2 {
+    margin-left: 1.5em;
+    width: 10em;
+}
+
+input.ud-renewal-input-col2 {
+    margin-left: .5em;
+    width: 10em;
+}
+
+label.ud-renewal-label-col3 {
+    margin-left: 1.5em;
+    width: 2em;
+}
+
+input.ud-renewal-input-col3  {
+    margin-left: .5em;
+    width: 5em;
+}
+
+label.renew_last_name {
+    margin-left: 1.5em;
+}
+
+input.renew_last_name {
+    margin-left: .5em;
+    width: 10em;
+}
+
+/* Birthday */
+#ud-mb-birthday-lbl {
+    margin-left: .5em;
+}
+
+#ud-mb-birthday {
+    margin-right: 1em;
+}
+
+select.renew_birth_month {
+    margin-left: 1.3em;
+}
+
+select.renew_birth_day {
+}
+
+/* email address */
+label.renew_email {
+    margin-left: 4.6em;
+}
+
+input.renew_email {
+    margin-left: 2.7em;
+    width: 16em;
+}
+
+/* Phone Number */
+label.renew_phone {
+    margin: 0.5em;
+}
+
+input.renew_phone {
+    margin-left: 2.2em;
+    width: 2em;
+    padding: 0 0.2em;
+}
+
+/* Occupation */
+label#renew_memb_occu {
+    margin-left: 2.6em;
+}
+
+input#renew_memb_occu {
+    margin-left: 0.3em;
+    width: 10em;
+}
+
+/* address */
+label#renew_memb_addr1 {
+    margin-left: 0.5em;
+}
+
+input#renew_memb_addr1 {
+    margin-left: 0.5em;
+    width: 18em;
+}
+
+label#renew_memb_addr2 {
+    margin-left: 0.5em;
+}
+
+input#renew_memb_addr2 {
+    margin-left: 0.5em;
+    width: 6em;
+}
+
+label#renew_memb_city {
+    margin-left: .5em;
+}
+
+input#renew_memb_city {
+    margin-left: 2em;
+    width: 10em;
+}
+
+label#renew_memb_state {
+    margin: 0.5em 0 0.5em .5em;
+}
+
+select#renew_memb_state {
+    width: 8em;
+}
+
+label#renew_memb_zip {
+    margin: 0.5em 0 0.5em .5em;
+}
+
+input#renew_memb_zip {
+    width: 6em;
+    padding: 0;
+}
+
+/* username and password */
+label#renew_memb_username {
+    /*  margin: 0.5em; */
+}
+
+input#renew_memb_username {
+    margin-right: 4.5em;
+}
+
+label#renew_memb_password {
+    margin-right: 1.5em;
+}
+
+input#renew_memb_password {
+    margin: 0.5em;
+}
+
+div#renew_passDef {
+    margin: 0.5em 0.5em 0.5em 170px;
+}
+
+/* Spouse/Partner Info */
+label.renew_relationship {
+    margin-left: 3em;
+}
+
+select.renew_relationship {
+    /*  margin: 0.5em; */
+    width: 6em;
+    padding: 0;
+}
+
+/*  Family Members */
+label.renew_child_relationship {
+    margin-left: 4.7em;
+}
+
+select.renew_child_relationship {
+    width: 6em;
+    padding: 0;
+}
+
+label.renew_child_email {
+    margin-left: 0.5em;
+}
+
+input.renew_child_email {
+    margin-left: 2.5em;
+    width: 25em;
+}
+

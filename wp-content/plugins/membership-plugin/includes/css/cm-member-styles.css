@@ -1,0 +1,17 @@
+
+
+
+
+/*******************************
+***   Gravity Form CSS Changes
+*******************************/
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=text],
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=email],
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=tel],
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=url],
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=number],
+body .gform_wrapper .gform_body .gform_fields .gfield input[type=password],
+body .gform_wrapper .gform_body .gform_fields .gfield select,
+body .gform_wrapper .gform_body .gform_fields .gfield textarea {
+    font-size:12px;
+}

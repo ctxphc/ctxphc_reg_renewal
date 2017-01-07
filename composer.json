@@ -1,0 +1,18 @@
+{
+  "name": "vendor_name/package_name",
+  "description": "description_text",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "author's name",
+      "email": "email@example.com"
+    }
+  ],
+  "require": {
+    "phar-io/version": "1.0.x-dev",
+    "phar-io/manifest": "1.0.x-dev",
+    "phpunit/phpunit": "6.0.x-dev"
+  }
+}

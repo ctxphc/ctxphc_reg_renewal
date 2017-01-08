@@ -321,6 +321,22 @@ function get_associated_member_types() {
 	return ( $id_names );
 }
 
+function get_associated_member_id_keys( $mtype ) {
+	switch ( $mtype ) {
+		case 'mb':
+			$id_keys = array( 'wp_user_id', 'sp_id', 'c1_id', );
+			break;
+		case 'sp':
+			$id_keys = array( 'wp_user_id', 'mb_id', 'membUserID', 'prim_memb_id', );
+			break;
+		default:
+			$id_keys = array( 'wp_user_id', 'mb_id', 'membUserID', 'prim_memb_id', );
+			break;
+	}
+
+	return $id_keys;
+}
+
 function is_prime_member( $curusr_id, $assoc_usr_id, $assoc_memb_type ) {
 
 
@@ -396,6 +412,12 @@ function prepare_member_data( $meta_value, $meta_key ) {
 
 	switch ( $meta_key ) {
 		case 'birthday':
+			$prepared_metadata = make_date_safe( $meta_value );
+			break;
+		case 'fam_1_birthday':
+			$prepared_metadata = make_date_safe( $meta_value );
+			break;
+		case 'fam_2_birthday':
 			$prepared_metadata = make_date_safe( $meta_value );
 			break;
 		case 'phone':
@@ -538,14 +560,21 @@ function process_update_metadata() {
 
 	//check existing metadata against the form data to determine if data needs to be updated
 	foreach ( $clean_users_metadata as $member_key => $member_meta_array ) {
-		$cur_memb_id = $_POST[ $member_key . '_id' ];
+		if ( isset( $_POST[ $member_key . '_id' ] ) && ! empty( $_POST[ $member_key . '_id' ] ) ) {
+			$cur_memb_id = $_POST[ $member_key . '_id' ];
+		}
 		foreach ( $member_meta_array as $member_meta_key => $member_meta_value ) {
-
-			$compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $member_meta_value );
+            if ( is_array( $member_meta_value ) ){
+                foreach ( $member_meta_value as $metadata_value ){
+	                $compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $metadata_value );
+                }
+            } else {
+	            $compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $member_meta_value );
+            }
 
 			if ( $compare_result == false ) {
-
-				$result = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value );
+				$prev_value     = get_user_meta( $cur_memb_id, $member_meta_key, true );
+				$result = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
 
 				$code = 'meta_update-' . $member_meta_key;
 				if ( false == $result ) {
@@ -642,24 +671,12 @@ function get_clean_form_data( $type ) {
 
 	$reg_action = ucwords( strtolower( sanitize_text_field( $_POST[ 'reg_action' ] ) ) );
 
-	// define $family tags
-	$fam_tag_prefix = array( "mb", "sp" );
-
-	for ( $i = 1; $i <= $max_children; $i ++ ) {
-		$fam_tag_prefix[]       = "c{$i}";
-		$fam_memb_id_keys[ $i ] = "fam_memb_{$i}_id";
-	}
-
 	$mb_userdata = array(
+		'ID'         => intval( $_POST[ 'mb_id' ] ),
 		'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'mb_first_name' ] ) ) ),
 		'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'mb_last_name' ] ) ) ),
 		'email'      => is_email( strtolower( sanitize_email( wp_unslash( $_POST[ 'mb_email' ] ) ) ) ),
 	);
-
-	if ( $orig_user[ 'mb' ]->__isset( 'ID' ) ) {
-		$mb_userdata[ 'ID' ] = $orig_user[ 'mb' ]->get( 'ID' );
-	}
-
 
 	$mb_metadata = array(
 		'mb_id'           => intval( $_POST[ 'mb_id' ] ),
@@ -681,154 +698,74 @@ function get_clean_form_data( $type ) {
 	$cleaned_form_data[ 'metadata' ][ 'mb' ] = $mb_metadata;
 
 	/** @var ARRAY $sp */
-	if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
+	if ( isset( $_POST[ 'sp_id' ] ) && ! empty( $_POST[ 'sp_id' ] ) ) {
+
 		$sp_userdata = array(
+			'ID'         => intval( $_POST[ 'sp_id' ] ),
 			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_first_name' ] ) ) ),
 			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_last_name' ] ) ) ),
 			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'sp_email' ] ) ) ),
 		);
 
-		if ( isset( $orig_meta[ 'mb' ][ 'sp_id' ] ) ) {
-			$sp_userdata[ 'ID' ] = $orig_meta[ 'mb' ][ 'sp_id' ][ 0 ];
-		}
-
 		$sp_metadata = array(
-			'phone'           => format_save_phone( $_POST[ 'sp_phone' ] ),
-			'birthday'        => make_date_safe( $_POST[ 'sp_birthday' ] ),
-			'relationship_id' => intval( $_POST[ 'sp_relationship' ] ),
+			'birthday'     => make_date_safe( $_POST[ 'sp_birthday' ] ),
+			'relationship' => intval( $_POST[ 'sp_relationship' ] ),
+			'mb_id'        => intval( $_POST[ 'mb_id' ] ),
+			'sp_id'        => intval( $_POST[ 'sp_id' ] ),
 		);
 
-		if ( 'update' == $type && ! empty( $_POST[ 'sp_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
-			$sp_metadata[ 'mb_id' ]                             = intval( $_POST[ 'mb_id' ] );
-		}
+		$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
 
 		$cleaned_form_data[ 'userdata' ][ 'sp' ] = $sp_userdata;
 		$cleaned_form_data[ 'metadata' ][ 'sp' ] = $sp_metadata;
+
+	} else if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
+
+		$sp_metadata = array(
+			'sp_first_name'   => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_first_name' ] ) ) ),
+			'sp_last_name'    => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_last_name' ] ) ) ),
+			'sp_email'        => is_email( strtolower( sanitize_email( $_POST[ 'sp_email' ] ) ) ),
+			'sp_phone'        => format_save_phone( $_POST[ 'sp_phone' ] ),
+			'sp_birthday'     => make_date_safe( $_POST[ 'sp_birthday' ] ),
+			'sp_relationship' => intval( $_POST[ 'sp_relationship' ] ),
+		);
+
+		$cleaned_form_data[ 'metadata' ][ 'mb' ] = $sp_metadata;
 	}
 
-	//replace explicitly named child_data processing references with loop to reduce code duplication
-	//for ($c=1; $c<=$max_children; $c++){
+	// Begin child data loop
 	for ( $c = 1; $c <= $max_children; $c ++ ) {
 		$ctag       = "c{$c}";
 		$udata_name = $ctag . "_userdata";  #runtime array name
 		$mdata_name = $ctag . "_metadata";  #runtime array name
-		if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
+
+		if ( isset( $_POST[ $ctag . '_id' ] ) && ! empty( $_POST[ $ctag . '_id' ] ) ) {
 			${$udata_name} = array(
+				'ID'         => intval( $_POST[ $ctag . '_id' ] ),
 				'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) ),
 				'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) ),
 				'email'      => is_email( strtolower( sanitize_email( $_POST[ $ctag . '_email' ] ) ) ),
 			);
 
-			if ( isset( $orig_meta[ "{$ctag}_id" ][ 0 ] ) ) {
-				${$udata_name}[ 'ID' ] = $orig_meta[ "{$ctag}_id" ][ 0 ];
-			}
-
 			${$mdata_name} = array(
-				'birthday'        => make_date_safe( $_POST[ $ctag . '_birthday' ] ),
-				'relationship_id' => intval( $_POST[ $ctag . '_relationship' ] ),
+				'mb_id'        => intval( $_POST[ 'mb_id' ] ),
+				'birthday'     => make_date_safe( $_POST[ $ctag . '_birthday' ] ),
+				'relationship' => intval( $_POST[ $ctag . '_relationship' ] ),
 			);
 
-			if ( 'update' == $type && ! empty( $_POST[ $ctag . '_id' ] ) ) {
-				$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
-				${$mdata_name}[ 'mb_id' ]                                 = intval( $_POST[ 'mb_id' ] );
-			}
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
 
 			$cleaned_form_data[ 'userdata' ][ $ctag ] = ${$udata_name};
 			$cleaned_form_data[ 'metadata' ][ $ctag ] = ${$mdata_name};
+
+		} else if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_first_name' ]   = ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) );
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_last_name' ]    = ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) );
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_email' ]        = is_email( strtolower( sanitize_email( $_POST[ $ctag . '_email' ] ) ) );
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_birthday' ]     = make_date_safe( $_POST[ $ctag . '_birthday' ] );
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_relationship' ] = intval( $_POST[ $ctag . '_relationship' ] );
 		}
 	} #end child_data loop
-
-
-	/* repeated code replaced by single loop above
-	 * *
-	if ( isset( $_POST[ 'c1_first_name' ] ) && ! empty( $_POST[ 'c1_first_name' ] ) ) {
-		$c1_userdata = array(
-				'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'c1_first_name' ] ) ) ),
-				'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'c1_last_name' ] ) ) ),
-				'email'      => is_email( strtolower( sanitize_email( $_POST[ 'c1_email' ] ) ) ),
-		);
-
-		$c1_metadata = array(
-				'birthday'        => make_date_safe( $_POST[ 'c1_birthday' ] ),
-				'relationship_id' => intval( $_POST[ 'c1_relationship' ] ),
-		);
-
-		if ( 'update' == $type && ! empty( $_POST[ 'c1_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'c1_id' ] = intval( $_POST[ 'c1_id' ] );
-			$c1_metadata[ 'mb_id' ]                             = intval( $_POST[ 'mb_id' ] );
-		}
-		$cleaned_form_data[ 'userdata' ][ 'c1' ] = $c1_userdata;
-		$cleaned_form_data[ 'metadata' ][ 'c1' ] = $c1_metadata;
-	}
-
-
-
-	if ( isset( $_POST[ 'c2_first_name' ] ) && ! empty( $_POST[ 'c2_first_name' ] ) ) {
-		$c2_userdata = array(
-			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'c2_first_name' ] ) ) ),
-			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'c2_last_name' ] ) ) ),
-			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'c2_email' ] ) ) ),
-		);
-
-		$c2_metadata = array(
-			'birthday'        => make_date_safe( $_POST[ 'c2_birthday' ] ),
-			'relationship_id' => intval( $_POST[ 'c2_relationship' ] ),
-		);
-
-		if ( 'update' == $type && ! empty( $_POST[ 'c2_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'c2_id' ] = intval( $_POST[ 'c2_id' ] );
-			$c2_metadata[ 'mb_id' ]                             = intval( $_POST[ 'mb_id' ] );
-		}
-		$cleaned_form_data[ 'userdata' ][ 'c2' ] = $c2_userdata;
-		$cleaned_form_data[ 'metadata' ][ 'c2' ] = $c2_metadata;
-	}
-
-	if ( isset( $_POST[ 'c3_first_name' ] ) && ! empty( $_POST[ 'c3_first_name' ] ) ) {
-		$c3_userdata = array(
-			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'c3_first_name' ] ) ) ),
-			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'c3_last_name' ] ) ) ),
-			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'c3_email' ] ) ) ),
-		);
-
-		$c3_metadata = array(
-			'birthday'        => make_date_safe( $_POST[ 'c3_birthday' ] ),
-			'relationship_id' => intval( $_POST[ 'c3_relationship' ] ),
-		);
-
-		if ( 'update' == $type && ! empty( $_POST[ 'c3_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'c3_id' ] = intval( $_POST[ 'c3_id' ] );
-			$c3_metadata[ 'mb_id' ]                             = intval( $_POST[ 'mb_id' ] );
-		}
-		$cleaned_form_data[ 'userdata' ][ 'c3' ] = $c3_userdata;
-		$cleaned_form_data[ 'metadata' ][ 'c3' ] = $c3_metadata;
-	}
-
-	if ( isset( $_POST[ 'c4_first_name' ] ) && ! empty( $_POST[ 'c4_first_name' ] ) ) {
-		$c4_userdata = array(
-			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'c4_first_name' ] ) ) ),
-			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'c4_last_name' ] ) ) ),
-			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'c4_email' ] ) ) ),
-		);
-
-		$c4_metadata = array(
-			'birthday'        => make_date_safe( $_POST[ 'c4_birthday' ] ),
-			'relationship_id' => intval( $_POST[ 'c4_relationship' ] ),
-		);
-
-		if ( 'update' == $type && ! empty( $_POST[ 'c4_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'c4_id' ] = intval( $_POST[ 'c4_id' ] );
-			$c4_metadata[ 'mb_id' ]                             = intval( $_POST[ 'mb_id' ] );
-		}
-
-		$cleaned_form_data[ 'userdata' ][ 'c4' ] = $c4_userdata;
-		$cleaned_form_data[ 'metadata' ][ 'c4' ] = $c4_metadata;
-	}
-	 *
-	 *
-	 */
-
-	// end obsoleted code
 
 	return $cleaned_form_data;
 }
@@ -861,7 +798,18 @@ function add_members_metadata( $member, $user_id ) {
 
 function update_members_metadata( $user_id, $meta_key, $meta_value, $prev_value = '' ) {
 	global $memb_error;
+	$result = '';
 	$result = update_user_meta( $user_id, $meta_key, $meta_value, $prev_value );
+
+	// so check and make sure the stored value matches $new_value
+	if ( get_user_meta( $user_id, $meta_key, true ) != $meta_value ) {
+		$code       = 'metadata_update_' . $meta_key;
+		$error_data = array( $user_id, $meta_key, $form_value, $metadata_value );
+		$message    = "Metadata update failed : $user_id, $meta_key, $form_value, $metadata_value";
+		$memb_error->add( $code, __( $message, 'membership' ), $error_data );
+
+		error_log_message( $memb_error->get_error_message( $code ) );
+	}
 
 	return $result;
 }
@@ -1290,6 +1238,59 @@ function get_mb_field_map() {
 
 		"wp_user_id"    => "mb_id",
 		"fam_memb_id_1" => "sp_id",
+
+		"fam_1_first_name"      => "c1_first_name",
+		"fam_1_last_name"       => "c1_last_name",
+		"fam_1_email"           => "c1_email",
+		"fam_1_birthday"        => "c1_birthday",
+		"fam_1_relationship_id" => "c1_relationship",
+
+		"fam_2_first_name"      => "c2_first_name",
+		"fam_2_last_name"       => "c2_last_name",
+		"fam_2_email"           => "c2_email",
+		"fam_2_birthday"        => "c2_birthday",
+		"fam_2_relationship_id" => "c2_relationship",
+
+		"fam_3_first_name"      => "c3_first_name",
+		"fam_3_last_name"       => "c3_last_name",
+		"fam_3_email"           => "c3_email",
+		"fam_3_birthday"        => "c3_birthday",
+		"fam_3_relationship_id" => "c3_relationship",
+
+		"fam_4_first_name"      => "c4_first_name",
+		"fam_4_last_name"       => "c4_last_name",
+		"fam_4_email"           => "c4_email",
+		"fam_4_birthday"        => "c4_birthday",
+		"fam_4_relationship_id" => "c4_relationship",
+
+		"c1_first_name"      => "c1_first_name",
+		"c1_last_name"       => "c1_last_name",
+		"c1_email"           => "c1_email",
+		"c1_birthday"        => "c1_birthday",
+		"c1_relationship"    => "c1_relationship",
+		"c1_relationship_id" => "c1_relationship",
+
+		"c2_first_name"      => "c2_first_name",
+		"c2_last_name"       => "c2_last_name",
+		"c2_email"           => "c2_email",
+		"c2_birthday"        => "c2_birthday",
+		"c2_relationship"    => "c1_relationship",
+		"c2_relationship_id" => "c2_relationship",
+
+		"c3_first_name"      => "c3_first_name",
+		"c3_last_name"       => "c3_last_name",
+		"c3_email"           => "c3_email",
+		"c3_birthday"        => "c3_birthday",
+		"c3_relationship"    => "c1_relationship",
+		"c3_relationship_id" => "c3_relationship",
+
+		"c4_first_name"      => "c4_first_name",
+		"c4_last_name"       => "c4_last_name",
+		"c4_email"           => "c4_email",
+		"c4_birthday"        => "c4_birthday",
+		"c4_relationship"    => "c1_relationship",
+		"c4_relationship_id" => "c4_relationship",
+
 	);
 
 	return $mapped_fields;
@@ -1635,118 +1636,3 @@ function ctxphc_custom_user_profile_fields( $user ) {
 
 add_action( 'show_user_profile', 'ctxphc_custom_user_profile_fields' );
 add_action( 'edit_user_profile', 'ctxphc_custom_user_profile_fields' );
-
-
-/*
-function get_member_data(){
-	foreach ( $sub_user_meta as $orig_meta_key => $orig_meta_val ) {
-		// echo "//testing $orig_meta_key => $orig_meta_val[0]\n";
-		if ( ( $orig_meta_key == "memb_type" ) || ( $orig_meta_key == "membership_type" ) || ( $orig_meta_key == "mb_membership_type" ) || ( $orig_meta_key == "membership" ) ) {
-			$memb_radio_tag = "memb_type_" . $orig_meta_val[ 0 ];
-			#echo "\tdocument.getElementById(\"memb_radio_tag\").value = \"checked\" \n";
-			$populate_form[ $memb_radio_tag ] = $orig_meta_val[ 0 ];
-		} else if ( preg_match( "/phone$/", $orig_meta_key ) && ( isset( $relationship_map[
-				$orig_meta_val[ 0 ] ] ) ) ){
-			$populate_form[ 'phone' ];
-
-		} else {
-			if ( ! empty( $form_data_map[ $orig_meta_key ] ) ) {
-				if ( $id_name = $form_data_map[ $orig_meta_key ] ) {
-					#echo ("<!-- Testing $id_name, value: $orig_meta_val[0] --> \n ");
-					#echo "\tdocument.getElementById(\"$id_name\").value = \"$orig_meta_val[0]\" \n";
-					#echo ("<!-- reg_match $id_name: " . (preg_match("/relationship$/",$id_name)?'TRUE':'FALSE') . "--> \n ");
-					if ( preg_match( "/relationship$/", $id_name ) && ( isset( $relationship_map[ $orig_meta_val[ 0 ] ] ) ) ) {
-						#echo ("<!-- Testing map for  $orig_meta_val[0] --> \n ");
-						#if (isset($relationship_map[$orig_meta_val[0]])) {
-						$map_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#echo ("<!-- mapping $orig_meta_val[0] to $map_val  --> \n  ");
-						$data_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#}
-
-					} else {
-						$data_val = $orig_meta_val[ 0 ];
-					}
-					$form_key                   = ( preg_match( $assoc_keys_regex, $id_name ) ) ? $id_name : $sub_key . "_" . $id_name;
-					$populate_form[ $form_key ] = $data_val;
-				}
-			}
-		}
-	}
-}
-*/
-
-/*
-function get_spouse_data(){
-	foreach ( $sub_user_meta as $orig_meta_key => $orig_meta_val ) {
-		// echo "//testing $orig_meta_key => $orig_meta_val[0]\n";
-		if ( ( $orig_meta_key == "memb_type" ) || ( $orig_meta_key == "membership_type" ) || ( $orig_meta_key == "mb_membership_type" ) || ( $orig_meta_key == "membership" ) ) {
-			$memb_radio_tag = "memb_type_" . $orig_meta_val[ 0 ];
-			#echo "\tdocument.getElementById(\"memb_radio_tag\").value = \"checked\" \n";
-			$populate_form[ $memb_radio_tag ] = $orig_meta_val[ 0 ];
-		} else if ( preg_match( "/phone$/", $orig_meta_key ) && ( isset( $relationship_map[
-				$orig_meta_val[ 0 ] ] ) ) ){
-			$populate_form[ 'phone' ];
-
-		} else {
-			if ( ! empty( $form_data_map[ $orig_meta_key ] ) ) {
-				if ( $id_name = $form_data_map[ $orig_meta_key ] ) {
-					#echo ("<!-- Testing $id_name, value: $orig_meta_val[0] --> \n ");
-					#echo "\tdocument.getElementById(\"$id_name\").value = \"$orig_meta_val[0]\" \n";
-					#echo ("<!-- reg_match $id_name: " . (preg_match("/relationship$/",$id_name)?'TRUE':'FALSE') . "--> \n ");
-					if ( preg_match( "/relationship$/", $id_name ) && ( isset( $relationship_map[ $orig_meta_val[ 0 ] ] ) ) ) {
-						#echo ("<!-- Testing map for  $orig_meta_val[0] --> \n ");
-						#if (isset($relationship_map[$orig_meta_val[0]])) {
-						$map_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#echo ("<!-- mapping $orig_meta_val[0] to $map_val  --> \n  ");
-						$data_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#}
-
-					} else {
-						$data_val = $orig_meta_val[ 0 ];
-					}
-					$form_key                   = ( preg_match( $assoc_keys_regex, $id_name ) ) ? $id_name : $sub_key . "_" . $id_name;
-					$populate_form[ $form_key ] = $data_val;
-				}
-			}
-		}
-	}
-}
-*/
-
-/*
-function get_child_data(){
-	foreach ( $sub_user_meta as $orig_meta_key => $orig_meta_val ) {
-		// echo "//testing $orig_meta_key => $orig_meta_val[0]\n";
-		if ( ( $orig_meta_key == "memb_type" ) || ( $orig_meta_key == "membership_type" ) || ( $orig_meta_key == "mb_membership_type" ) || ( $orig_meta_key == "membership" ) ) {
-			$memb_radio_tag = "memb_type_" . $orig_meta_val[ 0 ];
-			#echo "\tdocument.getElementById(\"memb_radio_tag\").value = \"checked\" \n";
-			$populate_form[ $memb_radio_tag ] = $orig_meta_val[ 0 ];
-		} else if ( preg_match( "/phone$/", $orig_meta_key ) && ( isset( $relationship_map[
-				$orig_meta_val[ 0 ] ] ) ) ){
-			$populate_form[ 'phone' ];
-
-		} else {
-			if ( ! empty( $form_data_map[ $orig_meta_key ] ) ) {
-				if ( $id_name = $form_data_map[ $orig_meta_key ] ) {
-					#echo ("<!-- Testing $id_name, value: $orig_meta_val[0] --> \n ");
-					#echo "\tdocument.getElementById(\"$id_name\").value = \"$orig_meta_val[0]\" \n";
-					#echo ("<!-- reg_match $id_name: " . (preg_match("/relationship$/",$id_name)?'TRUE':'FALSE') . "--> \n ");
-					if ( preg_match( "/relationship$/", $id_name ) && ( isset( $relationship_map[ $orig_meta_val[ 0 ] ] ) ) ) {
-						#echo ("<!-- Testing map for  $orig_meta_val[0] --> \n ");
-						#if (isset($relationship_map[$orig_meta_val[0]])) {
-						$map_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#echo ("<!-- mapping $orig_meta_val[0] to $map_val  --> \n  ");
-						$data_val = $relationship_map[ $orig_meta_val[ 0 ] ];
-						#}
-
-					} else {
-						$data_val = $orig_meta_val[ 0 ];
-					}
-					$form_key                   = ( preg_match( $assoc_keys_regex, $id_name ) ) ? $id_name : $sub_key . "_" . $id_name;
-					$populate_form[ $form_key ] = $data_val;
-				}
-			}
-		}
-	}
-}
-*/

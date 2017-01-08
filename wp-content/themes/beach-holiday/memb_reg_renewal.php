@@ -16,9 +16,17 @@ if ( ! is_user_logged_in() ) {
 	auth_redirect();
 }
 
+$possible_associated_member_id_keys = array(
+	'sp_id',
+	'c1_id',
+	'membUserID',
+	'prim_memb_id',
+);
+
 $prime_member_id       = null;
 $cur_user_relationship = null;
-$populate_form = array();
+$populate_form         = array();
+$report                = "<ul>";
 
 $orig_user_data = array();
 $orig_user_meta = array();
@@ -48,196 +56,132 @@ $cur_user_data = get_userdata( $cur_user_id );
 $cur_user_meta = get_user_meta( $cur_user_id );
 $usr_metadata  = $cur_user_meta;
 
-$associated_member_types = get_associated_member_types();
+get_header();
+/*
+$user1_count = 0;
+foreach ( $possible_associated_member_id_keys as $check_key ) {
+	$user1_count ++;
+	$u1_id = "user_id_{$user1_count}";
+	if ( $cur_user_info->__isset( $check_key ) ) {
+		${$u1_id} = $cur_user_info->__get( $check_key );
+		if ( $cur_user_info->__get( 'ID' ) <> ${$u1_id} ) {
+			$user_info[] = get_userdata( ${$u1_id} );
+			$report .= "<li>" . $check_key . " value is " . ${$u1_id};
+		}
+	}
+}
 
-/**
- * $join     = "";
- * $key_list = "";
- * foreach ( $associated_member_keys as $associated_memb_key ) {
- *
- * $key_list = $key_list . $join . $associated_memb_key;
- * $join     = "|";
- * }
- * $associated_member_keys_regex = "/^(?:" . $key_list . ")/";
- **/
+$user2_count = 0;
+foreach ( $possible_associated_member_id_keys as $check_key ) {
+	$user2_count ++;
+	$u2_id = "user_id_{$user2_count}";
+	foreach ( $user_info as $user_data ) {
+		if ( $user_data->__isset( $check_key ) ) {
+			${$u2_id} = $user_data->__get( $check_key );
+			if ( $user_data->__get( 'ID' ) <> ${$u2_id} ) {
+				$user_info[] = get_userdata( ${$u2_id} );
+				$report .= "<li>" . $check_key . " value is " . ${$u2_id};
+			}
+		}
+	}
+}
+$report .= "</ul>";
+echo $report;
+
+
+foreach ( $associated_member_ids as $associated_member_id ) {
+	$account_info[] = get_userdata( $associated_member_id );
+}
+
+foreach ( $account_info as $member_info ) {
+	if ( $member_info->__isset() ) {
+
+	}
+}
+*/
+
+$associated_member_types = get_associated_member_types();
 
 foreach ( $associated_member_types as $associated_member_type ) {
 
+	$associated_member_id_keys = get_associated_member_id_keys( $associated_member_type );
+
 	if ( $associated_member_type == 'mb' ) {
-		//continue; // Do not need to test for mb_id.
+		continue; // Do not need to test for mb_id.
 	}
 
 	$associated_member_id_key = $associated_member_type . "_id";
 
-	// get current user's relationship type.
-	// used to determine if we should check for primary member.
+	$metadata_field_map = map_metadata_to_form_fields( $associated_member_type );
 
-	foreach ( get_relationship_keys() as $rel_key ) {
-		if ( ! isset( $cur_user_relationship ) ) {
-			if ( $cur_user_info->__isset( $rel_key ) ) {
-				foreach ( member_relationship_value_map() as $mr_key => $mr_value ) {
-					if ( $cur_user_info->__get( $rel_key ) == $mr_value ) {
-						if ( ! isset( $cur_user_relationship ) ) {
-							$cur_user_relationship = $mr_value;
+	if ( $cur_user_info->__isset( $associated_member_id_key ) ) {
+		foreach ( get_relationship_keys() as $rel_key ) {
+			if ( ! isset( $cur_user_relationship ) ) {
+				if ( $cur_user_info->__isset( $rel_key ) ) {
+					if ( ! isset( $populate_form[ $metadata_field_map[ $rel_key ] ] ) ) {
+						foreach ( member_relationship_value_map() as $mr_key => $mr_value ) {
+							if ( $cur_user_info->__get( $rel_key ) == $mr_value ) {
+								if ( ! isset( $cur_user_relationship ) ) {
+									$cur_user_relationship = $mr_value;
+								}
+							} else if ( $cur_user_info->__get( $rel_key ) == $mr_key ) {
+								$cur_user_relationship = $mr_key;
+							}
 						}
-					} else if ( $cur_user_info->__get( $rel_key ) === $mr_key ) {
-						$cur_user_relationship = $mr_key;
 					}
 				}
 			}
 		}
-	}
 
-	if ( $cur_user_relationship == 1 || $cur_user_relationship == 'M' ) {
-	    $cur_user_relationship = null;
-		$prime_member_id = $cur_user_info->__get( 'ID' );
-		// load primary members orig-info
-		$orig_user_data[ 'mb' ] = get_member_data( $prime_member_id );
-		$orig_user_meta[ 'mb' ] = get_member_metadata( $prime_member_id );
-	} else {
-		// user is an associated member
-		if ( ! isset( $prime_member_id ) ) {
-			// get primary members info
-			$prime_member_id = get_primary_member_id( $cur_user_meta );
-			if ( ! isset( $orig_user_data ) ) {
+
+		if ( $cur_user_relationship == 1 || $cur_user_relationship == 'M' ) {
+			$cur_user_relationship = null;
+			$prime_member_id       = $cur_user_info->__get( 'ID' );
+
+			// load primary members orig-info
+			$account_info[ 'mb' ]   = get_member_data( $prime_member_id );
+			$orig_user_data[ 'mb' ] = get_member_data( $prime_member_id );
+			$orig_user_meta[ 'mb' ] = get_member_metadata( $prime_member_id );
+		} else {
+			// user is an associated member
+			if ( ! isset( $prime_member_id ) ) {
+				// get primary members info
+				$prime_member_id = get_primary_member_id( $cur_user_meta );
+
+				// load primary members orig-info
+				$account_info[ 'mb' ]   = get_member_data( $prime_member_id );
 				$orig_user_data[ 'mb' ] = get_member_data( $prime_member_id );
 				$orig_user_meta[ 'mb' ] = get_member_metadata( $prime_member_id );
 			}
 		}
-		//load associated member's info
-		$orig_user_data[ $associated_member_type ] = get_member_data( $cur_user_info->__get( 'ID' ) );
-		$orig_user_meta[ $associated_member_type ] = get_member_metadata( $cur_user_info->__get( 'ID' ) );
-	}
 
-	$metadata_field_map = map_metadata_to_form_fields( $associated_member_type );
-
-	foreach ( $metadata_field_map as $meta_field_key => $form_field_key ) {
-		if ( $cur_user_info->__isset( $meta_field_key ) && ! empty( $cur_user_info->__get( $meta_field_key ) ) ) {
-			$prepared_meta_data = prepare_member_data( $cur_user_info->__get( $meta_field_key ), $meta_field_key );
-
-			if ( $prepared_meta_data <> $populate_form[ $form_field_key ] ) {
-				$populate_form[ $form_field_key ] = $prepared_meta_data;
-			}
-		}
-	}
-}
-
-// capture original user info in session variable
-// for reference and comparison
-$_SESSION[ 'orig_user_data' ] = $orig_user_data;
-$_SESSION[ 'orig_user_meta' ] = $orig_user_meta;
-
-/*
-if ( $cur_user_info->__isset( $associated_member_id_key ) && $cur_user_info->ID <> $cur_user_info->__get( $associated_member_id_key ) ) {
-
-
-	$associated_member_id = $cur_user_info->__get( $associated_member_id_key );
-
-} else {
-	$associated_member_keys = get_associated_member_keys();
-	foreach ( $associated_member_keys as $associated_member_key ) {
-		if ( $cur_user_info->__isset( $associated_member_key ) ) {
-			$associated_member_id = $cur_user_info->__get( $associated_member_key );
-			if ( $associated_member_id <> $cur_user_info->ID ) {
-				$prime_member_id = $associated_member_id;  //I think this works.
-
-				//update cur_user_meta with associated_memb_id
-				// i.e. sp_id = associated_memb_id
-				if ( $cur_user_info->__isset( $associated_member_id_key ) ) {
-					$result = update_members_metadata( $cur_user_id, $associated_member_id_key, $associated_member_id );
-				}
-
-				break;
-			}
-		}
-	}
-}
-
-// Is current user the primary member
-// or a associated member of the primary member?
-if ( is_prime_member( $cur_user_id, $associated_member_id, $associated_member_id_key ) ) {
-	$prime_member_id = $cur_user_id;
-} else {
-	$prime_member_id = get_primary_member_id( $cur_user_meta );
-}
-
-$associated_members[ 'prime' ] = get_associated_user_ids( $prime_member_id );
-$associated_member_types       = get_associated_member_keys();
-
-foreach ( $associated_members as $associated_member ) {
-	$associated_members[] = get_associated_user_ids( $associated_member->user_id );
-	foreach ( $associated_member_types as $key ) {
-		if ( $associated_member->meta_key == $key ) {
-			$associated_member_id[ $key ] = $associated_member->user_id;
-		}
-	}
-}
-
-
-// capture original user info in session variable
-// for reference and comparison
-$_SESSION[ 'orig_user_data' ] = $orig_user_data;
-$_SESSION[ 'orig_user_meta' ] = $orig_user_meta;
-
-
-if ( isset( $associated_member_id ) && ! empty( $associated_member_id ) ) {
-
-
-	$orig_user_data[ 'mb' ] = get_member_data( $cur_user_id );
-	$orig_user_meta[ 'mb' ] = get_member_metadata( $cur_user_id );
-
-	if ( ! isset( $orig_user_meta[ 'mb' ][ 'mb_id' ] ) || empty( $orig_user_meta[ 'mb' ][ 'mb_id' ] ) ) {
-		$orig_user_meta[ 'mb' ][ 'mb_id' ] = $cur_user_id;
-	}
-
-	$orig_user_data[ $associated_member_type ] = get_member_data( $associated_member_id );
-	$orig_user_meta[ $associated_member_type ] = get_member_metadata( $associated_member_id );
-
-	$orig_user_meta[ $associated_member_type ][ $associated_member_id_key ] = $associated_member_id;
-}
-
-
-// capture original user info in session variable
-// for reference and comparison
-$_SESSION[ 'orig_user_data' ] = $orig_user_data;
-$_SESSION[ 'orig_user_meta' ] = $orig_user_meta;
-
-foreach ( $associated_member_types as $associated_member_type ) {
-
-	$associated_member_id_key = $associated_member_type . "_id";
-
-	$metadata_field_map = map_metadata_to_form_fields( $associated_member_type );
-
-	if ( ! empty( $cur_user_meta[ $associated_member_id_key ][ 0 ] ) ) {
-		if ( empty( $usr_metadata ) ) {
-			$usr_metadata = get_user_meta( $cur_user_meta[ $associated_member_id_key ][ 0 ] );
+		if ( $cur_user_info->__isset( $associated_member_id_key ) ) {
+			//load associated member's info
+			$account_info[ $associated_member_type ]   = get_userdata( $cur_user_info->__get( $associated_member_id_key ) );
+			$orig_user_data[ $associated_member_type ] = get_member_data( $cur_user_info->__get( $associated_member_id_key ) );
+			$orig_user_meta[ $associated_member_type ] = get_member_metadata( $cur_user_info->__get( $associated_member_id_key ) );
 		}
 
-		foreach ( $metadata_field_map as $meta_field_key => $form_field_key ) {
+		foreach ( $account_info as $member_key => $member_info ) {
+			$metadata_field_map = map_metadata_to_form_fields( $member_key );
+			foreach ( $metadata_field_map as $meta_field_key => $form_field_key ) {
+				if ( $member_info->__isset( $meta_field_key ) && ! empty( $member_info->__get( $meta_field_key ) ) ) {
+					$prepared_meta_data = prepare_member_data( $member_info->__get( $meta_field_key ), $meta_field_key );
 
-			foreach ( $usr_metadata as $usr_meta_key => $usr_meta_value ) {
-				$meta_value = $usr_meta_value[ 0 ];
-
-				if ( isset( $meta_value ) && ! empty( $meta_value ) ) {
-
-					if ( $usr_meta_key == $meta_field_key ) {
-						$prepared_meta_data = prepare_member_data( $meta_value, $meta_field_key );
-
-						if ( $prepared_meta_data <> $populate_form[ $form_field_key ] ) {
-							$populate_form[ $form_field_key ] = $prepared_meta_data;
-						}
+					if ( $prepared_meta_data <> $populate_form[ $form_field_key ] ) {
+						$populate_form[ $form_field_key ] = $prepared_meta_data;
 					}
 				}
 			}
 		}
-
-		$usr_metadata = array();
 	}
 }
-*/
-echo "</ul>";
 
-get_header();
+// capture original user info in session variable
+// for reference and comparison
+$_SESSION[ 'orig_user_data' ] = $orig_user_data;
+$_SESSION[ 'orig_user_meta' ] = $orig_user_meta;
+
 ?>
 
 <div id="content">

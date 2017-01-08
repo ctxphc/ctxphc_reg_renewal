@@ -399,7 +399,14 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="reg_first_name validate[custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c1_first_name" name="c1_first_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c1' ][ 'first_name' ] ) ? $form_user_data[ 'c1' ][ 'first_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c1' ][ 'first_name' ] ) ) {
+										       echo $form_user_data[ 'c1' ][ 'first_name' ];
+									       } else if ( isset( $member_meta_data[ 'mb' ][ 'c1_first_name' ] ) ) {
+										       echo $member_meta_data[ 'mb' ][ 'c1_first_name' ];
+									       } else {
+										       echo '';
+									       }
+									       ?>"
 
                                     <label class="reg_last_name" id="lbl_c1_last_name"
                                            for="c1_last_name">Last Name:</label>
@@ -407,7 +414,14 @@ debug_log_message( $message, $debug ); ?>
                                            data-prompt-position="bottomLeft"
                                            id="c1_last_name" name="c1_last_name"
                                            type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c1' ][ 'last_name' ] ) ? $form_user_data[ 'c1' ][ 'last_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c1' ][ 'last_name' ] ) ) {
+	                                           echo $form_user_data[ 'c1' ][ 'last_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c1_last_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c1_last_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                                 <div class="reg_renewal_row">
                                     <label class="cm_birthday" id="lbl_c1_birthday"
@@ -415,13 +429,26 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="cm_birthday validate[condRequired[c1_first_name], custom[onlyNumber]]"
                                            data-prompt-position="bottomLeft"
                                            id="c1_birthday" name="c1_birthday" type="date"
-                                           value="<?php echo isset( $member_meta_data[ 'c1' ][ 'birthday' ] ) ? $member_meta_data[ 'c1' ][ 'birthday' ] : ''; ?>"
+                                           value="<?php if ( isset( $member_meta_data[ 'c1' ][ 'birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'c1' ][ 'birthday' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c1_birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c1_birthday' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="child_relationship" id="lbl_c1_relationship"
                                            for="c1_relationship">Relationship:</label>
                                     <select class="child_relationship" id="c1_relationship"
                                             name="c1_relationship">
-										<?php $defSel = isset( $member_meta_data[ 'c1' ][ 'c1_relationship' ] ) ? $member_meta_data[ 'c1' ][ 'c1_relationship' ] : 4; ?>
+										<?php if ( isset( $member_meta_data[ 'c1' ][ 'relationship' ] ) ){
+											$defSel = $member_meta_data[ 'c1' ][ 'relationship' ];
+                                        } else if ( isset( $member_meta_data[ 'mb' ][ 'c1_relationship' ] ) ) {
+											$defSel = $member_meta_data[ 'mb' ][ 'c1_relationship' ];
+										} else {
+										    $defSel = 4;
+										} ?>
 										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
                                     </select>
                                 </div>
@@ -430,7 +457,14 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="child_email validate[condRequired[c1_first_name], custom[email]]"
                                            data-prompt-position="bottomLeft"
                                            id="c1_email" name="c1_email" type="email"
-                                           value="<?php echo isset( $form_user_data[ 'c1' ][ 'email' ] ) ? $form_user_data[ 'c1' ][ 'email' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c1' ][ 'email' ] ) ) {
+	                                           echo $form_user_data[ 'c1' ][ 'email' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c1_email' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c1_email' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                             </section>
                             <!--  End of 1st Child/Other Info fieldset -->
@@ -449,14 +483,28 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="reg_first_name validate[custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c2_first_name" name="c2_first_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c2' ][ 'first_name' ] ) ? $form_user_data[ 'c2' ][ 'first_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c2' ][ 'first_name' ] ) ) {
+	                                           echo $form_user_data[ 'c2' ][ 'first_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c2_first_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c2_first_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="reg_last_name" id="lbl_c2_last_name"
                                            for="c2_last_name">Last Name:</label>
                                     <input class="reg_last_name validate[condRequired[c2_first_name], custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c2_last_name" name="c2_last_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c2' ][ 'last_name' ] ) ? $form_user_data[ 'c2' ][ 'last_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c2' ][ 'last_name' ] ) ) {
+	                                           echo $form_user_data[ 'c2' ][ 'last_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c2_last_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c2_last_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                                 <div class="reg_renewal_row">
                                     <label class="cm_birthday" id="lbl_c2_birthday"
@@ -464,13 +512,26 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="cm_birthday validate[condRequired[c2_first_name], custom[onlyNumber]]"
                                            data-prompt-position="bottomLeft"
                                            id="c2_birthday" name="c2_birthday" type="date"
-                                           value="<?php echo isset( $member_meta_data[ 'c2' ][ 'birthday' ] ) ? $member_meta_data[ 'c2' ][ 'birthday' ] : ''; ?>"
+                                           value="<?php if ( isset( $member_meta_data[ 'c2' ][ 'birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'c2' ][ 'birthday' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c2_birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c2_birthday' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="child_relationship" id="lbl_c2_relationship"
                                            for="c2_relationship">Relationship:</label>
                                     <select class="child_relationship" id="c2_relationship"
                                             name="c2_relationship">
-										<?php $defSel = isset( $member_meta_data[ 'c2' ][ 'c2_relationship' ] ) ? $member_meta_data[ 'c2' ][ 'c2_relationship' ] : 4; ?>
+	                                    <?php if ( isset( $member_meta_data[ 'c2' ][ 'relationship' ] ) ){
+		                                    $defSel = $member_meta_data[ 'c2' ][ 'relationship' ];
+	                                    } else if ( isset( $member_meta_data[ 'mb' ][ 'c2_relationship' ] ) ) {
+		                                    $defSel = $member_meta_data[ 'mb' ][ 'c2_relationship' ];
+	                                    } else {
+		                                    $defSel = 4;
+	                                    } ?>
 										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
                                     </select>
                                 </div>
@@ -480,7 +541,14 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="child_email validate[condRequired[c2_first_name], custom[email]]"
                                            data-prompt-position="bottomLeft"
                                            id="c2_email" name="c2_email" type="email"
-                                           value="<?php echo isset( $form_user_data[ 'c2' ][ 'email' ] ) ? $form_user_data[ 'c2' ][ 'email' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c2' ][ 'email' ] ) ) {
+	                                           echo $form_user_data[ 'c2' ][ 'email' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c2_email' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c2_email' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                             </section>
                             <!-- End 2nd FAMILY MEMBER -->
@@ -498,14 +566,28 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="reg_first_name validate[custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c3_first_name" name="c3_first_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c3' ][ 'first_name' ] ) ? $form_user_data[ 'c3' ][ 'first_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c3' ][ 'first_name' ] ) ) {
+	                                           echo $form_user_data[ 'c3' ][ 'first_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c3_first_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c3_first_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="reg_last_name" id="lbl_c3_last_name"
                                            for="c3_last_name">Last Name:</label>
                                     <input class="reg_last_name validate[condRequired[c3_first_name], custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c3_last_name" name="c3_last_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c3' ][ 'last_name' ] ) ? $form_user_data[ 'c3' ][ 'last_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c3' ][ 'last_name' ] ) ) {
+	                                           echo $form_user_data[ 'c3' ][ 'last_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c3_last_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c3_last_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                                 <div class="reg_renewal_row">
                                     <label class="cm_birthday" id="lbl_c3_birthday"
@@ -513,13 +595,26 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="cm_birthday validate[condRequired[c3_first_name], custom[onlyNumber]]"
                                            data-prompt-position="bottomLeft" id="c3_birthday"
                                            name="c3_birthday" type="date"
-                                           value="<?php echo isset( $member_meta_data[ 'c3' ][ 'birthday' ] ) ? $member_meta_data[ 'c3' ][ 'birthday' ] : ''; ?>"
+                                           value="<?php if ( isset( $member_meta_data[ 'c3' ][ 'birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'c3' ][ 'birthday' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c3_birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c3_birthday' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="child_relationship" id="lbl_c3_relationship"
                                            for="c3_relationship">Relationship:</label>
                                     <select class="child_relationship" id="c3_relationship"
                                             name="c3_relationship">
-										<?php $defSel = isset( $member_meta_data[ 'c3' ][ 'c3_relationship' ] ) ? $member_meta_data[ 'c3' ][ 'c3_relationship' ] : 4; ?>
+	                                    <?php if ( isset( $member_meta_data[ 'c3' ][ 'relationship' ] ) ){
+		                                    $defSel = $member_meta_data[ 'c3' ][ 'relationship' ];
+	                                    } else if ( isset( $member_meta_data[ 'mb' ][ 'c3_relationship' ] ) ) {
+		                                    $defSel = $member_meta_data[ 'mb' ][ 'c3_relationship' ];
+	                                    } else {
+		                                    $defSel = 4;
+	                                    } ?>
 										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
                                     </select>
                                 </div>
@@ -529,7 +624,14 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="child_email validate[condRequired[c3_first_name], custom[email]]"
                                            data-prompt-position="bottomLeft"
                                            id="c3_email" name="c3_email" type="email"
-                                           value="<?php echo isset( $form_user_data[ 'c3' ][ 'email' ] ) ? $form_user_data[ 'c3' ][ 'email' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c3' ][ 'email' ] ) ) {
+	                                           echo $form_user_data[ 'c3' ][ 'email' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c3_email' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c3_email' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                             </section>
                             <!-- End 3rd FAMILY MEMBER -->
@@ -547,14 +649,29 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="reg_first_name validate[custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c4_first_name" name="c4_first_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c4' ][ 'first_name' ] ) ? $form_user_data[ 'c4' ][ 'first_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c4' ][ 'first_name' ] ) ) {
+	                                           echo $form_user_data[ 'c4' ][ 'first_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c4_first_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c4_first_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
+
                                     <label class="reg_last_name" id="lbl_c4_last_name"
                                            for="c4_last_name">Last
                                         Name:</label>
                                     <input class="reg_last_name validate[condRequired[c4_first_name], custom[onlyLetterSp]]"
                                            data-prompt-position="bottomLeft"
                                            id="c4_last_name" name="c4_last_name" type="text"
-                                           value="<?php echo isset( $form_user_data[ 'c4' ][ 'last_name' ] ) ? $form_user_data[ 'c4' ][ 'last_name' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c4' ][ 'last_name' ] ) ) {
+	                                           echo $form_user_data[ 'c4' ][ 'last_name' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c4_last_name' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c4_last_name' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                                 <div class="reg_renewal_row">
                                     <label class="cm_birthday" id="lbl_c4_birthday"
@@ -562,13 +679,26 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="cm_birthday validate[condRequired[c4_first_name], custom[onlyNumber]]"
                                            data-prompt-position="bottomLeft"
                                            id="c4_birthday" name="c4_birthday" type="date"
-                                           value="<?php echo isset( $member_meta_data[ 'c4' ][ 'birthday' ] ) ? $member_meta_data[ 'c4' ][ 'birthday' ] : ''; ?>"
+                                           value="<?php if ( isset( $member_meta_data[ 'c4' ][ 'birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'c4' ][ 'birthday' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c4_birthday' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c4_birthday' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
 
                                     <label class="child_relationship" id="lbl_c4_relationship"
                                            for="c4_relationship">Relationship:</label>
                                     <select class="child_relationship" id="c4_relationship"
                                             name="c4_relationship">
-										<?php $defSel = isset( $member_meta_data[ 'c4' ][ 'c4_relationship' ] ) ? $member_meta_data[ 'c4' ][ 'c4_relationship' ] : 4; ?>
+	                                    <?php if ( isset( $member_meta_data[ 'c4' ][ 'relationship' ] ) ){
+		                                    $defSel = $member_meta_data[ 'c4' ][ 'relationship' ];
+	                                    } else if ( isset( $member_meta_data[ 'mb' ][ 'c4_relationship' ] ) ) {
+		                                    $defSel = $member_meta_data[ 'mb' ][ 'c4_relationship' ];
+	                                    } else {
+		                                    $defSel = 4;
+	                                    } ?>
 										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
                                     </select>
                                 </div>
@@ -577,7 +707,14 @@ debug_log_message( $message, $debug ); ?>
                                     <input class="child_email validate[condRequired[c4_first_name], custom[email]]"
                                            data-prompt-position="bottomLeft"
                                            id="c4_email" name="c4_email" type="email"
-                                           value="<?php echo isset( $form_user_data[ 'c4' ][ 'email' ] ) ? $form_user_data[ 'c4' ][ 'email' ] : ''; ?>"
+                                           value="<?php if ( isset( $form_user_data[ 'c4' ][ 'email' ] ) ) {
+	                                           echo $form_user_data[ 'c4' ][ 'email' ];
+                                           } else if ( isset( $member_meta_data[ 'mb' ][ 'c4_email' ] ) ) {
+	                                           echo $member_meta_data[ 'mb' ][ 'c4_email' ];
+                                           } else {
+	                                           echo '';
+                                           }
+                                           ?>"
                                 </div>
                             </section>
                             <!-- End 4th FAMILY MEMBER -->

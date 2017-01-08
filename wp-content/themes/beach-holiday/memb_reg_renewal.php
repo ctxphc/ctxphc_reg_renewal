@@ -7,7 +7,9 @@ global $defSel, $wpdb, $memb_error;
 
 ?>
 
-<?php // if (!is_user_logged_in()) { auth_redirect(); } //User must be logged in to access this page!?>
+<?php if ( ! is_user_logged_in() ) {
+	auth_redirect();
+} //User must be logged in to access this page!?>
 <?php //$wpdb->show_errors(); ?>
 
 <?php
@@ -57,48 +59,6 @@ $cur_user_meta = get_user_meta( $cur_user_id );
 $usr_metadata  = $cur_user_meta;
 
 get_header();
-/*
-$user1_count = 0;
-foreach ( $possible_associated_member_id_keys as $check_key ) {
-	$user1_count ++;
-	$u1_id = "user_id_{$user1_count}";
-	if ( $cur_user_info->__isset( $check_key ) ) {
-		${$u1_id} = $cur_user_info->__get( $check_key );
-		if ( $cur_user_info->__get( 'ID' ) <> ${$u1_id} ) {
-			$user_info[] = get_userdata( ${$u1_id} );
-			$report .= "<li>" . $check_key . " value is " . ${$u1_id};
-		}
-	}
-}
-
-$user2_count = 0;
-foreach ( $possible_associated_member_id_keys as $check_key ) {
-	$user2_count ++;
-	$u2_id = "user_id_{$user2_count}";
-	foreach ( $user_info as $user_data ) {
-		if ( $user_data->__isset( $check_key ) ) {
-			${$u2_id} = $user_data->__get( $check_key );
-			if ( $user_data->__get( 'ID' ) <> ${$u2_id} ) {
-				$user_info[] = get_userdata( ${$u2_id} );
-				$report .= "<li>" . $check_key . " value is " . ${$u2_id};
-			}
-		}
-	}
-}
-$report .= "</ul>";
-echo $report;
-
-
-foreach ( $associated_member_ids as $associated_member_id ) {
-	$account_info[] = get_userdata( $associated_member_id );
-}
-
-foreach ( $account_info as $member_info ) {
-	if ( $member_info->__isset() ) {
-
-	}
-}
-*/
 
 $associated_member_types = get_associated_member_types();
 
@@ -155,12 +115,29 @@ foreach ( $associated_member_types as $associated_member_type ) {
 			}
 		}
 
-		if ( $cur_user_info->__isset( $associated_member_id_key ) ) {
-			//load associated member's info
-			$account_info[ $associated_member_type ]   = get_userdata( $cur_user_info->__get( $associated_member_id_key ) );
-			$orig_user_data[ $associated_member_type ] = get_member_data( $cur_user_info->__get( $associated_member_id_key ) );
-			$orig_user_meta[ $associated_member_type ] = get_member_metadata( $cur_user_info->__get( $associated_member_id_key ) );
+		foreach ( $associated_member_types as $assoc_member_type ) {
+			if ( $assoc_member_type <> 'mb' && $account_info[ 'mb' ]->__isset( $assoc_member_type . '_id' ) ) {
+				switch ( $assoc_member_type ) {
+					case 'mb':
+						break;
+					case 'sp':
+						$assoc_id = $account_info[ 'mb' ]->__get( 'sp_id' );
+						break;
+					default:
+						$assoc_id = $account_info[ 'mb' ]->__get( $assoc_member_type . '_id' );
+						break;
+				}
+				$associated_ids[ $assoc_member_type ] = $assoc_id;
+			}
 		}
+
+		foreach ( $associated_ids as $assoc_id_key => $associated_id ) {
+			//load associated member's info
+			$account_info[ $assoc_id_key ]   = get_userdata( $associated_id );
+			$orig_user_data[ $assoc_id_key ] = get_member_data( $associated_id );
+			$orig_user_meta[ $assoc_id_key ] = get_member_metadata( $associated_id );
+		}
+
 
 		foreach ( $account_info as $member_key => $member_info ) {
 			$metadata_field_map = map_metadata_to_form_fields( $member_key );

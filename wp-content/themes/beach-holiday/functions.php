@@ -564,17 +564,17 @@ function process_update_metadata() {
 			$cur_memb_id = $_POST[ $member_key . '_id' ];
 		}
 		foreach ( $member_meta_array as $member_meta_key => $member_meta_value ) {
-            if ( is_array( $member_meta_value ) ){
-                foreach ( $member_meta_value as $metadata_value ){
-	                $compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $metadata_value );
-                }
-            } else {
-	            $compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $member_meta_value );
-            }
+			if ( is_array( $member_meta_value ) ) {
+				foreach ( $member_meta_value as $metadata_value ) {
+					$compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $metadata_value );
+				}
+			} else {
+				$compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $member_meta_value );
+			}
 
 			if ( $compare_result == false ) {
-				$prev_value     = get_user_meta( $cur_memb_id, $member_meta_key, true );
-				$result = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
+				$prev_value = get_user_meta( $cur_memb_id, $member_meta_key, true );
+				$result     = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
 
 				$code = 'meta_update-' . $member_meta_key;
 				if ( false == $result ) {
@@ -630,18 +630,18 @@ function compare_form_userdata( $user_data_key, $user_data_value, $user_info, $c
 	}
 
 	if ( $user_data_value != $user_info->$user_key ) {
-		$result = wp_update_user( array(
+		$updated_user_id = wp_update_user( array(
 			'ID'      => $current_memb_id,
 			$user_key => $user_data_value,
 		) );
 
-		if ( is_wp_error( $result ) ) {
-			$code = 'user_data_update-' . $current_memb_id;
+		if ( is_wp_error( $updated_user_id ) ) {
+			$code = 'wp_update_user_error_' . $current_memb_id;
 			$memb_error->add( $code, "wp_user_update failed for : $current_memb_id, $user_key, $user_data_value" );
 			error_log_message( $memb_error->get_error_message( $code ) );
 			//$memb_error->remove( $code );
 		} else {
-			$code = 'user_data_update-' . $current_memb_id;
+			$code = 'wp_update_user_success_' . $current_memb_id;
 			$memb_error->add( $code, "wp_user_update completed for : $current_memb_id, $user_key, $user_data_value" );
 			error_log_message( $memb_error->get_error_message( $code ) );
 			//$memb_error->remove( $code );
@@ -649,6 +649,23 @@ function compare_form_userdata( $user_data_key, $user_data_value, $user_info, $c
 	}
 }
 
+function make_pretty( $ugly_data ) {
+	foreach ( $ugly_data as $ugly_key => $ugly_value ) {
+		foreach ( $ugly_value as $ukey => $uvalue ) {
+			switch ( $ukey ) {
+				case 'phone':
+					$pretty_value = formatPhoneNumber( $uvalue );
+					break;
+				default:
+					$pretty_value = $uvalue;
+					break;
+			}
+			$pretty_data[ $ugly_key ][ $ukey ] = $pretty_value;
+		}
+	}
+
+	return $pretty_data;
+}
 
 /**
  * @param $type
@@ -698,39 +715,28 @@ function get_clean_form_data( $type ) {
 	$cleaned_form_data[ 'metadata' ][ 'mb' ] = $mb_metadata;
 
 	/** @var ARRAY $sp */
-	if ( isset( $_POST[ 'sp_id' ] ) && ! empty( $_POST[ 'sp_id' ] ) ) {
+	if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
+		if ( isset( $_POST[ 'sp_id' ] ) && ! empty( $_POST[ 'sp_id' ] ) ) {
+			$cleaned_form_data[ 'metadata' ][ 'sp' ][ 'mb_id' ] = intval( $_POST[ 'mb_id' ] );
+			$cleaned_form_data[ 'metadata' ][ 'sp' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
+			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
+		}
 
 		$sp_userdata = array(
-			'ID'         => intval( $_POST[ 'sp_id' ] ),
 			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_first_name' ] ) ) ),
 			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_last_name' ] ) ) ),
 			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'sp_email' ] ) ) ),
 		);
 
 		$sp_metadata = array(
+			'phone'        => format_save_phone( $_POST[ 'sp_phone' ] ),
 			'birthday'     => make_date_safe( $_POST[ 'sp_birthday' ] ),
 			'relationship' => intval( $_POST[ 'sp_relationship' ] ),
-			'mb_id'        => intval( $_POST[ 'mb_id' ] ),
-			'sp_id'        => intval( $_POST[ 'sp_id' ] ),
 		);
-
-		$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
 
 		$cleaned_form_data[ 'userdata' ][ 'sp' ] = $sp_userdata;
 		$cleaned_form_data[ 'metadata' ][ 'sp' ] = $sp_metadata;
 
-	} else if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
-
-		$sp_metadata = array(
-			'sp_first_name'   => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_first_name' ] ) ) ),
-			'sp_last_name'    => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_last_name' ] ) ) ),
-			'sp_email'        => is_email( strtolower( sanitize_email( $_POST[ 'sp_email' ] ) ) ),
-			'sp_phone'        => format_save_phone( $_POST[ 'sp_phone' ] ),
-			'sp_birthday'     => make_date_safe( $_POST[ 'sp_birthday' ] ),
-			'sp_relationship' => intval( $_POST[ 'sp_relationship' ] ),
-		);
-
-		$cleaned_form_data[ 'metadata' ][ 'mb' ] = $sp_metadata;
 	}
 
 	// Begin child data loop
@@ -738,10 +744,13 @@ function get_clean_form_data( $type ) {
 		$ctag       = "c{$c}";
 		$udata_name = $ctag . "_userdata";  #runtime array name
 		$mdata_name = $ctag . "_metadata";  #runtime array name
-
-		if ( isset( $_POST[ $ctag . '_id' ] ) && ! empty( $_POST[ $ctag . '_id' ] ) ) {
+		if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
+			if ( isset( $_POST[ $ctag . '_id' ] ) && ! empty( $_POST[ $ctag . '_id' ] ) ) {
+				$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_id' ]  = intval( $_POST[ $ctag . '_id' ] );
+				$cleaned_form_data[ 'metadata' ][ $ctag ][ 'mb_id' ]       = intval( $_POST[ 'mb_id' ] );
+				$cleaned_form_data[ 'metadata' ][ $ctag ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
+			}
 			${$udata_name} = array(
-				'ID'         => intval( $_POST[ $ctag . '_id' ] ),
 				'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) ),
 				'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) ),
 				'email'      => is_email( strtolower( sanitize_email( $_POST[ $ctag . '_email' ] ) ) ),
@@ -753,17 +762,9 @@ function get_clean_form_data( $type ) {
 				'relationship' => intval( $_POST[ $ctag . '_relationship' ] ),
 			);
 
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
-
 			$cleaned_form_data[ 'userdata' ][ $ctag ] = ${$udata_name};
 			$cleaned_form_data[ 'metadata' ][ $ctag ] = ${$mdata_name};
 
-		} else if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_first_name' ]   = ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) );
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_last_name' ]    = ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) );
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_email' ]        = is_email( strtolower( sanitize_email( $_POST[ $ctag . '_email' ] ) ) );
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_birthday' ]     = make_date_safe( $_POST[ $ctag . '_birthday' ] );
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_relationship' ] = intval( $_POST[ $ctag . '_relationship' ] );
 		}
 	} #end child_data loop
 

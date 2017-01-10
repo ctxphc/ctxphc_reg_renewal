@@ -265,9 +265,11 @@ function make_date_safe( $date ) {
 	if ( $safe_date ) {
 		$fixed_safe_date = sprintf( "%s-%02s-%02s", $year, $month, $day );
 	} else {
-		$code = 'make_date_safe-' . $date;
-		$memb_error->add( $code, "The date was not valid.  This needs to be checked out.  The data will be stored for further review in the failed_registration table." );
+		$code      = 'make_date_safe_' . $date;
+		$error_msg = "The date was not valid.  This needs to be checked out.  The data will be stored for further review in the failed_registration table.";
+		$memb_error->add( $code, $error_msg );
 		$fixed_safe_date = $memb_error->get_error_message( $code );
+		unset( $code, $error_msg );
 	}
 
 	return $fixed_safe_date;
@@ -468,79 +470,130 @@ function prepare_member_data( $meta_value, $meta_key ) {
 
 
 /**
+ * @param $reg_type
+ *
  * @return mixed
  */
-function process_registration() {
-	global $prime_members_id;
+function process_registration( $reg_type ) {
+	global $prime_members_id, $memb_error;
 
-	$fam_counter  = 0;
 	$current_date = date( "Y-m-d" );
 	$renewal_date = get_renewal_date();
 
-	$clean_form_data      = get_clean_form_data( 'registration' );
+	$clean_form_data      = get_clean_form_data( $reg_type );
 	$clean_users_data     = $clean_form_data[ 'userdata' ];
 	$clean_users_metadata = $clean_form_data[ 'metadata' ];
 
-	foreach ( $clean_users_data as $memb_user_key => $memb_data_array ) {
-		$memb_id = add_wordpress_user( $memb_data_array );
+	foreach ( $clean_users_data as $memb_type_key => $memb_data ) {
 
-		if ( ! is_wp_error( $memb_id ) ) {
-			$member_ids[] = $memb_id;
-			$key_id       = $memb_user_key . '_id';
+		if ( empty( $memb_data[ 'email' ] ) ) {
+			$code      = 'email_missing';
+			$error_msg = "Email must be filled in to create a wordpress user account..";
+			$memb_error->add( $code, $error_msg );
 
-			// adds user's ID to metadata after creating wp user
-			$clean_users_metadata[ 'mb' ][ $key_id ] = $memb_id;
-		}
+			error_log_message( $memb_error->get_error_message( $code, $error_msg ) );
+			unset( $code, $error_msg );
 
+			// Added each associated member's data to the primary member's
+			// metadata if the associated member does not have an email address.
 
-		if ( is_wp_error( $memb_id ) ) {
-			error_log_message( $memb_id->get_error_message() );
-			$memb_id                                                  = null;
-			$clean_users_metadata[ $memb_user_key ][ 'hatch_date' ]   = make_date_safe( $current_date );
-			$clean_users_metadata[ $memb_user_key ][ 'renewal_date' ] = make_date_safe( $renewal_date );
-			$clean_users_metadata[ $memb_user_key ][ 'status_id' ]    = 0; // new member registration defaults to pending
+			// associated member's user data added to primary member's metadata
+			foreach ( $memb_data as $mb_meta_key => $mb_meta_value ) {
 
-			foreach ( $memb_data_array as $mb_meta_key => $mb_meta_value ) {
-				//$clean_users_metadata[ 'mb' ][ $memb_user_key . '_' . $mb_meta_key ] =
-				$mb_meta_value;
-				$clean_users_metadata[ 'mb' ][ $mb_meta_key ] = $mb_meta_value;
+				$associated_memb_data_key = $memb_type_key . '_' . $mb_meta_key;
+
+				$clean_users_metadata[ 'mb' ][ $associated_memb_data_key ] = $mb_meta_value;
+
 			}
 
-			foreach ( $clean_users_metadata[ $memb_user_key ] as $mb_meta_key => $mb_meta_value ) {
-				//$clean_users_metadata[ 'mb' ][ $memb_user_key . '_' . $mb_meta_key ] = $mb_meta_value;
-				$clean_users_metadata[ 'mb' ][ $mb_meta_key ] = $mb_meta_value;
+			// associated member's user metadata added to primary member's metadata
+			foreach ( $clean_users_metadata[ $memb_type_key ] as $mb_meta_key => $mb_meta_value ) {
+				$associated_memb_data_key = $memb_type_key . '_' . $mb_meta_key;
+
+				$clean_users_metadata[ 'mb' ][ $associated_memb_data_key ] = $mb_meta_value;
 			}
+
+		} else if ( email_exists( $memb_data[ 'email' ] ) ) {
+			$code      = 'email_exists';
+			$error_msg = "Email address is already registered.";
+			$memb_error->add( $code, $error_msg );
+
+			error_log_message( $memb_error->get_error_message( $code, $error_msg ) );
+			unset( $code, $error_msg );
+			//TODO: Display message to user that email is already registered.
+
+			// Added each associated member's data to the primary member's
+			// metadata if the associated member's email address is already registered.
+
+			// associated member's user data added to primary member's metadata
+			foreach ( $memb_data as $mb_meta_key => $mb_meta_value ) {
+				$associated_memb_data_key = $memb_type_key . '_' . $mb_meta_key;
+
+				$clean_users_metadata[ 'mb' ][ $associated_memb_data_key ] = $mb_meta_value;
+			}
+
+			// associated member's user metadata added to primary member's metadata
+			foreach ( $clean_users_metadata[ $memb_type_key ] as $mb_meta_key => $mb_meta_value ) {
+				$associated_memb_data_key = $memb_type_key . '_' . $mb_meta_key;
+
+				$clean_users_metadata[ 'mb' ][ $associated_memb_data_key ] = $mb_meta_value;
+			}
+
 		} else {
-			if ( 'mb' == $memb_user_key ) {
-				if ( is_null( $prime_members_id ) ) {
-					$prime_members_id = $memb_id;
-				}
+			// Create wordpress user.
+			// Will happen for every primary user
+			// but is optional for all others
+			$memb_id = create_wordpress_user( $memb_data );
+
+			if ( is_wp_error( $memb_id ) ) {
+
+				// error message in set in create wordpress user function and returned
+				// as memb_id value is there was an error.
+				error_log_message( $memb_id->get_error_message() );
+
 			} else {
-				// Add primary Member's Wordpress user id to each family member with a Wordpress user id.
-				$clean_users_metadata[ $memb_user_key ][ 'mb_id' ] = $prime_members_id;
-			}
 
-			$hatch_date = get_user_meta( $memb_id, 'hatch_date', true );
-			$reg_date   = get_user_meta( $memb_id, 'reg_date', true );
-			if ( ( $hatch_date == '' ) ) {
-				if ( $reg_date == '' ) {
-					$clean_users_metadata[ $memb_user_key ][ 'hatch_date' ] = make_date_safe( $current_date );
-					$clean_users_metadata[ $memb_user_key ][ 'status_id' ]  = 0; // new member registration defaults to pending
+				// Otherwise memb_id will contain the new members wordpress user id.
+				// We will add this user id to the metadata for the user as
+				// the users member type (mb_id, sp_id, etc)
+
+				$member_ids[] = $memb_id;  // may be able to delete this.
+
+				$clean_users_data[ $memb_type_key ][ 'ID' ] = $memb_id;  // not sure this is needed.
+
+				// Added each wordpress member's id to the primary members metadata
+				// sp_id, c1_id, c2_id, etc
+				$clean_users_metadata[ 'mb' ][ $memb_type_key . '_id' ] = $memb_id;
+
+				// Added associated member's id to their own metadata.
+				// Needed when doing membership renewal.
+				// sp_id, c1_id, c2_id, etc.
+				$clean_users_metadata[ $memb_type_key ][ $memb_type_key . '_id' ] = $memb_id;
+
+				if ( 'mb' == $memb_type_key ) {
+
+					// Set primary members user id
+					if ( is_null( $prime_members_id ) ) {
+
+						$prime_members_id = $memb_id;
+					}
+
 				} else {
-					$clean_users_metadata[ $memb_user_key ][ 'hatch_date' ] = $reg_date;
+					// Add primary Member's Wordpress user id to each family member with a Wordpress user id.
+					$clean_users_metadata[ $memb_type_key ][ 'mb_id' ] = $prime_members_id;
 				}
 			}
 
-			$clean_users_metadata[ $memb_user_key ][ 'renewal_date' ] = make_date_safe( $renewal_date );
+			$clean_users_metadata[ $memb_type_key ][ 'email' ] = $clean_users_data[ $memb_type_key ][ 'email' ];
 
-			$clean_form_data[ 'metadata' ] = $clean_users_metadata;
+			$clean_users_metadata[ $memb_type_key ][ 'hatch_date' ]   = make_date_safe( $current_date );
+			$clean_users_metadata[ $memb_type_key ][ 'renewal_date' ] = make_date_safe( $renewal_date );
+			$clean_users_metadata[ $memb_type_key ][ 'status_id' ]    = 0; // new member registration defaults to pending
+
 		}
-	}
 
-	$i = 0;
-	foreach ( $clean_users_metadata as $members_data ) {
-		$user_id = $member_ids[ $i ++ ];
-		add_members_metadata( $members_data, $user_id );
+		$clean_form_data[ 'userdata' ] = $clean_users_data;
+		$clean_form_data[ 'metadata' ] = $clean_users_metadata;
 	}
 
 	return $clean_form_data;
@@ -552,58 +605,71 @@ function process_registration() {
  *
  * @return int|WP_Error
  */
-function process_update_metadata() {
+function process_update_metadata( $reg_action ) {
+
 	global $memb_error;
-	$clean_form_data      = get_clean_form_data( 'update' );
+
+	$clean_form_data      = get_clean_form_data( $reg_action );
 	$clean_users_data     = $clean_form_data[ 'userdata' ];
 	$clean_users_metadata = $clean_form_data[ 'metadata' ];
 
 	//check existing metadata against the form data to determine if data needs to be updated
 	foreach ( $clean_users_metadata as $member_key => $member_meta_array ) {
+
 		if ( isset( $_POST[ $member_key . '_id' ] ) && ! empty( $_POST[ $member_key . '_id' ] ) ) {
+
 			$cur_memb_id = $_POST[ $member_key . '_id' ];
+
 		}
+
 		foreach ( $member_meta_array as $member_meta_key => $member_meta_value ) {
+
 			if ( is_array( $member_meta_value ) ) {
+
 				foreach ( $member_meta_value as $metadata_value ) {
+
 					$compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $metadata_value );
 				}
 			} else {
+
 				$compare_result = compare_form_data_to_usermeta( $cur_memb_id, $member_meta_key, $member_meta_value );
 			}
 
 			if ( $compare_result == false ) {
-				$prev_value = get_user_meta( $cur_memb_id, $member_meta_key, true );
-				$result     = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
 
-				$code = 'meta_update-' . $member_meta_key;
-				if ( false == $result ) {
-					$memb_error->add( $code, "User metadata update failed:  $user_id, $meta_key, $meta_value, $prev_value" );
-					error_log_message( $memb_error->get_error_message( $code ) );
-				} elseif ( true == $result ) {
-					$memb_error->add( $code, 'User metadata was updated for : $user_id, $meta_key, $meta_value, $prev_value' );
-					error_log_message( $memb_error->get_error_message( $code ) );
-				} else {
-					$memb_error->add( $code, 'User metadata did not exist and was added.' );
-					error_log_message( $memb_error->get_error_message( $code ) );
-				}
+				$prev_value = get_user_meta( $cur_memb_id, $member_meta_key, true );
+
+				$result = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
+
+				if ( is_wp_error( $result ) ){
+				    //Do something with this
+                }
 			}
 		}
 	}
 
 	//check existing user_data against the form data to determine if data needs to be updated
 	foreach ( $clean_users_data as $member_key => $member_user_array ) {
+
 		$cur_memb_id = $_POST[ $member_key . '_id' ];
 
 		//Get existing Wordpress user data
 		$user_info = get_userdata( $cur_memb_id );
+
 		if ( ! $user_info ) {
-			$code = 'get_userdata-' . $cur_memb_id;
-			$memb_error->add( $code, "get_userdata failed for ID : $cur_memb_id" );
+
+			$code      = 'get_userdata_' . $cur_memb_id;
+			$error_msg = "get_userdata failed for ID : $cur_memb_id";
+			$memb_error->add( $code, $error_msg );
 			error_log_message( $memb_error->get_error_message( $code ) );
+			unset( $code, $error_msg );
+
 		} else {
+
 			foreach ( $member_user_array as $user_data_key => $user_data_value ) {
+
 				compare_form_userdata( $user_data_key, $user_data_value, $user_info, $cur_memb_id );
+
 			}
 
 			return $clean_form_data;
@@ -616,42 +682,57 @@ function compare_form_userdata( $user_data_key, $user_data_value, $user_info, $c
 
 	$keyval     = null;
 	$key_fields = explode( '_', $user_data_key );
+
 	if ( is_array( $key_fields ) ) {
 		$i = 0;
+
 		while ( $i < count( $key_fields ) ) {
 			$keyval .= $key_fields[ $i ++ ];
 		}
 	}
 
 	if ( $keyval == 'ID' || $keyval == 'display_name' ) {
+
 		$user_key = $keyval;
+
 	} else {
+
 		$user_key = 'user_' . $keyval;
 	}
 
 	if ( $user_data_value != $user_info->$user_key ) {
+
 		$updated_user_id = wp_update_user( array(
 			'ID'      => $current_memb_id,
 			$user_key => $user_data_value,
 		) );
 
 		if ( is_wp_error( $updated_user_id ) ) {
-			$code = 'wp_update_user_error_' . $current_memb_id;
-			$memb_error->add( $code, "wp_user_update failed for : $current_memb_id, $user_key, $user_data_value" );
+
+			$code      = 'wp_update_user_error_' . $current_memb_id;
+			$error_msg = "wp_user_update failed for : $current_memb_id, $user_key, $user_data_value";
+			$memb_error->add( $code, $error_msg );
 			error_log_message( $memb_error->get_error_message( $code ) );
-			//$memb_error->remove( $code );
+			unset( $code, $error_msg );
+
 		} else {
-			$code = 'wp_update_user_success_' . $current_memb_id;
-			$memb_error->add( $code, "wp_user_update completed for : $current_memb_id, $user_key, $user_data_value" );
+
+			$code      = 'wp_update_user_success_' . $current_memb_id;
+			$error_msg = "wp_user_update completed for : $current_memb_id, $user_key, $user_data_value";
+			$memb_error->add( $code, $error_msg );
 			error_log_message( $memb_error->get_error_message( $code ) );
-			//$memb_error->remove( $code );
+			unset( $code, $error_msg );
+
 		}
 	}
 }
 
 function make_pretty( $ugly_data ) {
+
 	foreach ( $ugly_data as $ugly_key => $ugly_value ) {
+
 		foreach ( $ugly_value as $ukey => $uvalue ) {
+
 			switch ( $ukey ) {
 				case 'phone':
 					$pretty_value = formatPhoneNumber( $uvalue );
@@ -660,6 +741,7 @@ function make_pretty( $ugly_data ) {
 					$pretty_value = $uvalue;
 					break;
 			}
+
 			$pretty_data[ $ugly_key ][ $ukey ] = $pretty_value;
 		}
 	}
@@ -673,16 +755,99 @@ function make_pretty( $ugly_data ) {
  * @return mixed
  */
 function get_clean_form_data( $type ) {
-	/**
-	 * Clean up input data for insertion into the Wordpress User Metadata table.
-	 *
-	 * @var ARRAY $member_data
-	 *
-	 **/
 
 	global $max_children;
 
-	//register
+
+	if ( $type == 'renew' ) {
+
+		$cleaned_input_form_data = clean_renewal_form_input();
+
+	} else if ( $type == 'new' ) {
+
+		$cleaned_input_form_data = clean_new_reg_form_input();
+
+	}
+
+	return $cleaned_input_form_data;
+}
+
+function clean_new_reg_form_input() {
+	global $max_children;
+
+	$reg_action = ucwords( strtolower( sanitize_text_field( $_POST[ 'reg_action' ] ) ) );
+
+	$mb_userdata = array(
+		'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'mb_first_name' ] ) ) ),
+		'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'mb_last_name' ] ) ) ),
+		'email'      => is_email( strtolower( sanitize_email( wp_unslash( $_POST[ 'mb_email' ] ) ) ) ),
+	);
+
+	$mb_metadata = array(
+		'phone'           => format_save_phone( $_POST[ 'mb_phone' ] ),
+		'birthday'        => make_date_safe( $_POST[ 'mb_birthday' ] ),
+		'occupation'      => ucwords( strtolower( sanitize_text_field( $_POST[ 'mb_occupation' ] ) ) ),
+		'relationship_id' => ( isset( $_POST[ 'mb_relationship' ] ) ? intval( $_POST[ 'mb_relationship' ] ) : 1 ),
+		'membership_type' => intval( $_POST[ 'memb_type' ] ),
+		'addr1'           => sanitize_text_field( $_POST[ 'mb_addr1' ] ),
+		'addr2'           => sanitize_text_field( $_POST[ 'mb_addr2' ] ),
+		'city'            => sanitize_text_field( $_POST[ 'mb_city' ] ),
+		'state'           => sanitize_text_field( $_POST[ 'mb_state' ] ),
+		'zip'             => sanitize_text_field( $_POST[ 'mb_zip' ] ),
+	);
+
+	$cleaned_new_reg_form_input[ 'reg_action' ]       = $reg_action;
+	$cleaned_new_reg_form_input[ 'userdata' ][ 'mb' ] = $mb_userdata;
+	$cleaned_new_reg_form_input[ 'metadata' ][ 'mb' ] = $mb_metadata;
+
+	if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
+
+		$sp_userdata = array(
+			'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_first_name' ] ) ) ),
+			'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ 'sp_last_name' ] ) ) ),
+			'email'      => is_email( strtolower( sanitize_email( $_POST[ 'sp_email' ] ) ) ),
+		);
+
+		$sp_metadata = array(
+			'phone'        => format_save_phone( $_POST[ 'sp_phone' ] ),
+			'birthday'     => make_date_safe( $_POST[ 'sp_birthday' ] ),
+			'relationship' => intval( $_POST[ 'sp_relationship' ] ),
+		);
+
+		$cleaned_new_reg_form_input[ 'userdata' ][ 'sp' ] = $sp_userdata;
+		$cleaned_new_reg_form_input[ 'metadata' ][ 'sp' ] = $sp_metadata;
+	}
+
+	// Begin child data loop
+	for ( $c = 1; $c <= $max_children; $c ++ ) {
+		$ctag       = "c{$c}";
+		$udata_name = $ctag . "_userdata";  #runtime array name
+		$mdata_name = $ctag . "_metadata";  #runtime array name
+
+		if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
+
+			${$udata_name} = array(
+				'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) ),
+				'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) ),
+				'email'      => is_email( strtolower( sanitize_email( $_POST[ $ctag . '_email' ] ) ) ),
+			);
+
+			${$mdata_name} = array(
+				'birthday'     => make_date_safe( $_POST[ $ctag . '_birthday' ] ),
+				'relationship' => intval( $_POST[ $ctag . '_relationship' ] ),
+			);
+
+			$cleaned_new_reg_form_input[ 'userdata' ][ $ctag ] = ${$udata_name};
+			$cleaned_new_reg_form_input[ 'metadata' ][ $ctag ] = ${$mdata_name};
+		}
+	} #end child_data loop
+
+	return $cleaned_new_reg_form_input;
+}
+
+function clean_renewal_form_input() {
+	global $max_children;
+
 	$orig_meta = $_SESSION[ 'orig_user_meta' ];
 	$orig_user = $_SESSION[ 'orig_user_data' ];
 
@@ -709,17 +874,16 @@ function get_clean_form_data( $type ) {
 		'zip'             => sanitize_text_field( $_POST[ 'mb_zip' ] ),
 	);
 
+	$cleaned_renewal_form_input[ 'reg_action' ]       = $reg_action;
+	$cleaned_renewal_form_input[ 'userdata' ][ 'mb' ] = $mb_userdata;
+	$cleaned_renewal_form_input[ 'metadata' ][ 'mb' ] = $mb_metadata;
 
-	$cleaned_form_data[ 'reg_action' ]       = $reg_action;
-	$cleaned_form_data[ 'userdata' ][ 'mb' ] = $mb_userdata;
-	$cleaned_form_data[ 'metadata' ][ 'mb' ] = $mb_metadata;
-
-	/** @var ARRAY $sp */
 	if ( isset( $_POST[ 'sp_first_name' ] ) && ! empty( $_POST[ 'sp_first_name' ] ) ) {
+
 		if ( isset( $_POST[ 'sp_id' ] ) && ! empty( $_POST[ 'sp_id' ] ) ) {
-			$cleaned_form_data[ 'metadata' ][ 'sp' ][ 'mb_id' ] = intval( $_POST[ 'mb_id' ] );
-			$cleaned_form_data[ 'metadata' ][ 'sp' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
-			$cleaned_form_data[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
+			$cleaned_renewal_form_input[ 'metadata' ][ 'sp' ][ 'mb_id' ] = intval( $_POST[ 'mb_id' ] );
+			$cleaned_renewal_form_input[ 'metadata' ][ 'sp' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
+			$cleaned_renewal_form_input[ 'metadata' ][ 'mb' ][ 'sp_id' ] = intval( $_POST[ 'sp_id' ] );
 		}
 
 		$sp_userdata = array(
@@ -734,8 +898,8 @@ function get_clean_form_data( $type ) {
 			'relationship' => intval( $_POST[ 'sp_relationship' ] ),
 		);
 
-		$cleaned_form_data[ 'userdata' ][ 'sp' ] = $sp_userdata;
-		$cleaned_form_data[ 'metadata' ][ 'sp' ] = $sp_metadata;
+		$cleaned_renewal_form_input[ 'userdata' ][ 'sp' ] = $sp_userdata;
+		$cleaned_renewal_form_input[ 'metadata' ][ 'sp' ] = $sp_metadata;
 
 	}
 
@@ -744,12 +908,16 @@ function get_clean_form_data( $type ) {
 		$ctag       = "c{$c}";
 		$udata_name = $ctag . "_userdata";  #runtime array name
 		$mdata_name = $ctag . "_metadata";  #runtime array name
+
 		if ( isset( $_POST[ $ctag . '_first_name' ] ) && ! empty( $_POST[ $ctag . '_first_name' ] ) ) {
+
 			if ( isset( $_POST[ $ctag . '_id' ] ) && ! empty( $_POST[ $ctag . '_id' ] ) ) {
-				$cleaned_form_data[ 'metadata' ][ 'mb' ][ $ctag . '_id' ]  = intval( $_POST[ $ctag . '_id' ] );
-				$cleaned_form_data[ 'metadata' ][ $ctag ][ 'mb_id' ]       = intval( $_POST[ 'mb_id' ] );
-				$cleaned_form_data[ 'metadata' ][ $ctag ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
+
+				$cleaned_renewal_form_input[ 'metadata' ][ 'mb' ][ $ctag . '_id' ]  = intval( $_POST[ $ctag . '_id' ] );
+				$cleaned_renewal_form_input[ 'metadata' ][ $ctag ][ 'mb_id' ]       = intval( $_POST[ 'mb_id' ] );
+				$cleaned_renewal_form_input[ 'metadata' ][ $ctag ][ $ctag . '_id' ] = intval( $_POST[ $ctag . '_id' ] );
 			}
+
 			${$udata_name} = array(
 				'first_name' => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_first_name' ] ) ) ),
 				'last_name'  => ucwords( strtolower( sanitize_text_field( $_POST[ $ctag . '_last_name' ] ) ) ),
@@ -762,18 +930,20 @@ function get_clean_form_data( $type ) {
 				'relationship' => intval( $_POST[ $ctag . '_relationship' ] ),
 			);
 
-			$cleaned_form_data[ 'userdata' ][ $ctag ] = ${$udata_name};
-			$cleaned_form_data[ 'metadata' ][ $ctag ] = ${$mdata_name};
-
+			$cleaned_renewal_form_input[ 'userdata' ][ $ctag ] = ${$udata_name};
+			$cleaned_renewal_form_input[ 'metadata' ][ $ctag ] = ${$mdata_name};
 		}
 	} #end child_data loop
 
-	return $cleaned_form_data;
+	return $cleaned_renewal_form_input;
 }
 
 function load_post_data( $fam_tag_key ) {
+
 	foreach ( $_POST as $post_key => $post_value ) {
+
 		if ( preg_match( "/" . $fam_tag_key . "/", $post_key, $matches ) ) {
+
 			$fam_tag_key_data[] = $matches;
 		}
 	}
@@ -786,41 +956,60 @@ function load_post_data( $fam_tag_key ) {
  * @param $user_id
  */
 function add_members_metadata( $member, $user_id ) {
+	global $memb_error;
 
 	foreach ( $member as $meta_key => $meta_value ) {
-		//update_user_meta( $user_id, $meta_key, $meta_value );
-		//$result = compare_form_data_to_usermeta( $user_id, $meta_key, $meta_value );
-		if ( is_wp_error( $result ) ) {
-			//error_log_message( $result->get_error_message() );
+		if ( ! isset( $user_id ) || empty( $user_id ) ) {
+			continue;
+		} else {
+			update_user_meta( $user_id, $meta_key, $meta_value );
+
+			// so check and make sure the stored value matches $new_value
+			if ( get_user_meta( $user_id, $meta_key, true ) != $meta_value ) {
+				$code      = "user_metadata_update_" . $user_id;
+				$error_msg = "The update of the users metadata failed. : $user_id, $meta_key, $meta_value ";
+				$memb_error->add( $code, $error_msg );
+				error_log_message( $memb_error->get_error_message( $code ) );
+				unset( $code, $error_msg );
+			}
 		}
-		error_log_message( "testing renewals" );
 	}
 }
 
 function update_members_metadata( $user_id, $meta_key, $meta_value, $prev_value = '' ) {
 	global $memb_error;
-	$result = '';
-	$result = update_user_meta( $user_id, $meta_key, $meta_value, $prev_value );
+
+	update_user_meta( $user_id, $meta_key, $meta_value, $prev_value );
 
 	// so check and make sure the stored value matches $new_value
 	if ( get_user_meta( $user_id, $meta_key, true ) != $meta_value ) {
+
 		$code       = 'metadata_update_' . $meta_key;
 		$error_data = array( $user_id, $meta_key, $form_value, $metadata_value );
-		$message    = "Metadata update failed : $user_id, $meta_key, $form_value, $metadata_value";
-		$memb_error->add( $code, __( $message, 'membership' ), $error_data );
+		$error_msg  = "Metadata update failed : $user_id, $meta_key, $form_value, $metadata_value";
+		$memb_error->add( $code, __( $error_msg, 'membership' ), $error_data );
 
 		error_log_message( $memb_error->get_error_message( $code ) );
-	}
+		$return_value = $memb_error->get_error_message( $code );
+		unset( $code, $error_msg, $error_data );
 
-	return $result;
+	} else {
+
+		$return_value = true;
+    }
+
+    return $return_value;
 }
 
 
 function compare_form_data_to_usermeta( $user_id, $meta_key, $form_value ) {
 	global $memb_error;
+
 	// Verify the stored value matches new or updated value
 	$metadata_value = get_user_meta( $user_id, $meta_key, true );
+
 	if ( $metadata_value != $form_value ) {
+
 		$code       = 'compare_data_' . $meta_key;
 		$error_data = array( $user_id, $meta_key, $form_value, $metadata_value );
 		$message    = "Form input did not match existing metadata. Update needed for : $user_id, $meta_key, $form_value, $metadata_value";
@@ -829,7 +1018,9 @@ function compare_form_data_to_usermeta( $user_id, $meta_key, $form_value ) {
 		error_log_message( $memb_error->get_error_message( $code ) );
 
 		$result = false;
+
 	} else {
+
 		$result = true;
 	}
 
@@ -855,45 +1046,43 @@ function verify_userdata_value( $user_id, $meta_key, $meta_value ) {
  * @internal param $membdata
  *
  */
-function add_wordpress_user( $member ) {
+function create_wordpress_user( $member ) {
 	global $memb_error;
 
-	if ( ! empty( $member[ 'email' ] ) ) {
-		foreach ( $member as $mkey => $mval ) {
-			error_log_message( $mkey . '->' . $mval );
-		}
-		$userdata = array(
-			'first_name'      => $member[ 'first_name' ],
-			'last_name'       => $member[ 'last_name' ],
-			'user_email'      => $member[ 'email' ],
-			'user_login'      => ( isset( $member[ 'username' ] ) ? $member[ 'username' ] : mb_strtolower( substr( $member[ 'first_name' ], 0, 3 ) . substr( $member[ 'last_name' ], 0, 4 ) ) ),
-			'nickname'        => $member[ 'first_name' ] . ' ' . $member[ 'last_name' ],
-			'display_name'    => $member[ 'first_name' ] . ' ' . $member[ 'last_name' ],
-			'user_nicename'   => $member[ 'first_name' ] . '-' . $member[ 'last_name' ],
-			'user_registered' => $member[ 'reg_date' ],
-		);
+	$userdata = array(
+		'first_name'      => $member[ 'first_name' ],
+		'last_name'       => $member[ 'last_name' ],
+		'user_email'      => $member[ 'email' ],
+		'user_login'      => ( isset( $member[ 'username' ] ) ? $member[ 'username' ] : mb_strtolower( substr( $member[ 'first_name' ], 0, 3 ) . substr( $member[ 'last_name' ], 0, 4 ) ) ),
+		'nickname'        => $member[ 'first_name' ] . ' ' . $member[ 'last_name' ],
+		'display_name'    => $member[ 'first_name' ] . ' ' . $member[ 'last_name' ],
+		'user_nicename'   => $member[ 'first_name' ] . '-' . $member[ 'last_name' ],
+		'user_registered' => $member[ 'reg_date' ],
+	);
 
+	$memb_id = ( isset( $member[ 'ID' ] ) ) ? $member[ 'ID' ] : username_exists( $userdata[ 'user_login' ] );
 
-		$memb_id = ( isset( $member[ 'ID' ] ) ) ? $member[ 'ID' ] : username_exists( $userdata[ 'user_login' ] );
-		if ( $memb_id ) {
-			$userdata[ 'ID' ] = $memb_id;
-		} else {
-			$userdata[ 'user_pass' ] = ( isset( $member->pass ) ? $member->pass : wp_generate_password( $length = 12, $include_standard_special_chars = false ) );
-		}
+	if ( $memb_id ) {
 
-		$memb_id = wp_insert_user( $userdata );
+		$userdata[ 'ID' ] = $memb_id;
 
 	} else {
-		$memb_error->add( 'no_email', 'Without an email address we cannot create a wordpress user account.' );
-		$memb_id = $memb_error;
+
+		$userdata[ 'user_pass' ] = ( isset( $member->pass ) ? $member->pass : wp_generate_password( $length = 12, $include_standard_special_chars = false ) );
 	}
+
+	$memb_id = wp_insert_user( $userdata );
+
 
 	return $memb_id;
 }
 
 function get_clean_usermeta_data( $user_id ) {
+
 	$clean_user_metadata = array_map( function ( $a ) {
+
 		return $a[ 0 ];
+
 	}, get_user_meta( $user_id ) );
 
 	return $clean_user_metadata;

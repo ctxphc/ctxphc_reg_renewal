@@ -7,16 +7,17 @@ global $defSel, $wpdb;
 
 $display_reg_warning = false;
 
-$states_arr = load_states_array();
+$states = load_states_array();
 
-$relationship_arr = load_relationships_array();
+$membership_type_table   = 'ctxphc_membership_types';
+$relationship_type_table = 'ctxphc_member_relationships';
+$status_type_table       = 'ctxphc_member_status';
+
+$relationship_types = get_types( $relationship_type_table );
+$membership_types   = get_types( $membership_type_table );
+$memb_costs         = get_membership_pricing();
 
 $reg_action = reg_type_new();
-
-/** @var int $cost */
-$memb_costs = get_membership_pricing();
-
-$reg_type = reg_type_new();
 
 get_header(); ?>
 
@@ -101,8 +102,8 @@ get_header(); ?>
 
 					<form class="memb_reg_form" id="regForm" name="regForm" method="post"
 					      action="<?php bloginfo( 'url' ); ?>/registration-review/">
-						<input type="hidden" name="mb_relationship" value=1/>
-						<input type="hidden" name="reg_action" value=<?php echo $reg_action?>/>
+						<input type="hidden" name="mb_relationship" value=1 />
+						<input type="hidden" name="reg_action" value="<?php echo $reg_action; ?>" />
 						<fieldset class="reg_form" id="memb_type">
 							<legend><span class="memb_legend">Membership Options</span></legend>
 							<div class="memb_type" id="memb_type_div">
@@ -181,7 +182,7 @@ get_header(); ?>
 								<label id="lbl_mb_state" for="mb_state">State:</label>
 								<select class="validate[required]" id="mb_state" name="mb_state">
 									<?php $defSel = 'TX';
-									echo showOptionsDrop( $states_arr, $defSel, true ); ?>
+									echo showOptionsDrop( $states, $defSel, true ); ?>
 								</select>
 
 								<label id="lbl_mb_zip" for="mb_zip">Zip:</label>
@@ -196,18 +197,18 @@ get_header(); ?>
 							<legend><span class="memb_legend">Spouse/Partner</span></legend>
 							<div class="reg_form_row">
 								<label class="reg_first_name" id="lbl_sp_first_name" for="sp_first_name">First Name:</label>
-								<input class="reg_first_name validate[required, custom[onlyLetterSp]]"
+								<input class="reg_first_name validate[condRequired[memb_type]], custom[onlyLetterSp]]"
 								       data-prompt-position="bottomLeft" id="sp_first_name" name="sp_first_name" type="text"
 								       value=""/>
 
 								<label class="reg_last_name" id="lbl_sp_last_name" for="sp_last_name">Last Name:</label>
-								<input class="reg_last_name validate[required, custom[onlyLetterSp]]"
+								<input class="reg_last_name validate[condRequired[memb_type]], custom[onlyLetterSp]]"
 								       data-prompt-position="bottomLeft" id="sp_last_name" name="sp_last_name" type="text"
 								       value=""/>
 							</div>
 							<div class="reg_form_row">
 								<label class="cm_birthday" id="lbl_sp_birthday" for="sp_birthday">Birthdate:</label>
-								<input class="cm_birthday validate[required, custom[dateFormat]]" id="sp_birthday"
+								<input class="cm_birthday validate[condRequired[memb_type]] text-input datepicker" id="sp_birthday"
 								       data-prompt-position="bottomLeft" name="sp_birthday" type="date"/>
 
 								<label class="reg_email" id="lbl_sp_email" for="sp_email">Email:</label>
@@ -221,10 +222,10 @@ get_header(); ?>
 
 								<label class="sp_relationship" id="lbl_sp_relationship"
 								       for="sp_relationship">Relationship:</label>
-								<select class="sp_relationship validate[required]"
+								<select class="sp_relationship validate[condRequired[memb_type]]]"
 								        id="sp_relationship" name="sp_relationship">
 									<?php $defSel = 2 ?>
-									<?php echo showOptionsDrop( $relationship_arr, $defSel, true ); ?>
+									<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 								</select>
 
 							</div>
@@ -255,7 +256,7 @@ get_header(); ?>
 									       for="c1_relationship">Relationship:</label>
 									<select class="child_relationship" id="c1_relationship" name="c1_relationship">
 										<?php $defSel = 4 ?>
-										<?php echo showOptionsDrop( $relationship_arr, $defSel, true ); ?>
+										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 									</select>
 								</div>
 								<div class="reg_form_row">
@@ -289,7 +290,7 @@ get_header(); ?>
 									       for="c2_relationship">Relationship:</label>
 									<select class="child_relationship" id="c2_relationship" name="c2_relationship">
 										<?php $defSel = 4; ?>
-										<?php echo showOptionsDrop( $relationship_arr, $defSel, true ); ?>
+										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 									</select>
 								</div>
 								<div class="reg_form_row">
@@ -322,7 +323,7 @@ get_header(); ?>
 									<label class="child_relationship" id="lbl_c3_relationship" for="c3_relationship">Relationship:</label>
 									<select class="child_relationship" id="c3_relationship" name="c3_relationship">
 										<?php $defSel = 4; ?>
-										<?php echo showOptionsDrop( $relationship_arr, $defSel, true ); ?>
+										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 									</select>
 								</div>
 								<div class="reg_form_row">
@@ -356,7 +357,7 @@ get_header(); ?>
 									       for="c4_relationship">Relationship:</label>
 									<select class="child_relationship" id="c4_relationship" name="c4_relationship">
 										<?php $defSel = 4; ?>
-										<?php echo showOptionsDrop( $relationship_arr, $defSel, true ); ?>
+										<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 									</select>
 								</div>
 								<div class="reg_form_row">

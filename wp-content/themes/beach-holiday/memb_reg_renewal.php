@@ -10,6 +10,7 @@ global $defSel, $wpdb, $memb_error;
 <?php if ( ! is_user_logged_in() ) {
 	auth_redirect();
 } //User must be logged in to access this page!?>
+
 <?php //$wpdb->show_errors(); ?>
 
 <?php
@@ -28,7 +29,6 @@ $possible_associated_member_id_keys = array(
 $prime_member_id       = null;
 $cur_user_relationship = null;
 $populate_form         = array();
-$report                = "<ul>";
 
 $orig_user_data = array();
 $orig_user_meta = array();
@@ -95,30 +95,38 @@ foreach ( $associated_member_types as $associated_member_type ) {
 
 
 		if ( $cur_user_relationship == 1 || $cur_user_relationship == 'M' ) {
-			$cur_user_relationship = null;
+			unset( $cur_user_relationship );
+
 			$prime_member_id       = $cur_user_info->__get( 'ID' );
 
 			// load primary members orig-info
 			$account_info[ 'mb' ]   = get_member_data( $prime_member_id );
 			$orig_user_data[ 'mb' ] = get_member_data( $prime_member_id );
 			$orig_user_meta[ 'mb' ] = get_member_metadata( $prime_member_id );
+
 		} else {
-			// user is an associated member
+
+			// user is an associated member.
+            // Try to get the primary user's ID.
 			if ( ! isset( $prime_member_id ) ) {
 				// get primary members info
 				$prime_member_id = get_primary_member_id( $cur_user_meta );
 
-				// load primary members orig-info
+				// load primary members orig-info account info( includes user and metadata)
 				$account_info[ 'mb' ]   = get_member_data( $prime_member_id );
 				$orig_user_data[ 'mb' ] = get_member_data( $prime_member_id );
 				$orig_user_meta[ 'mb' ] = get_member_metadata( $prime_member_id );
 			}
 		}
 
+		// Create list of associated member ids
 		foreach ( $associated_member_types as $assoc_member_type ) {
+
 			if ( $assoc_member_type <> 'mb' && $account_info[ 'mb' ]->__isset( $assoc_member_type . '_id' ) ) {
-				switch ( $assoc_member_type ) {
+
+			    switch ( $assoc_member_type ) {
 					case 'mb':
+					    //if primary member break and run again.
 						break;
 					case 'sp':
 						$assoc_id = $account_info[ 'mb' ]->__get( 'sp_id' );
@@ -131,8 +139,9 @@ foreach ( $associated_member_types as $associated_member_type ) {
 			}
 		}
 
+		// Get associated members account info( including both user and metadata)
 		foreach ( $associated_ids as $assoc_id_key => $associated_id ) {
-			//load associated member's info
+
 			$account_info[ $assoc_id_key ]   = get_userdata( $associated_id );
 			$orig_user_data[ $assoc_id_key ] = get_member_data( $associated_id );
 			$orig_user_meta[ $assoc_id_key ] = get_member_metadata( $associated_id );

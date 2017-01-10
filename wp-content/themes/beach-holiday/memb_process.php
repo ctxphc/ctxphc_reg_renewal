@@ -1,13 +1,10 @@
 <?php
 /*
 Template Name: Reg_Processing
-
 Details: Processes both new and renewal registration data.
-
 */
 
 require_once TEMPLATEPATH . '/includes/randPassGen.php';
-
 
 $states = load_states_array();
 
@@ -40,40 +37,41 @@ get_header();
 $reg_action = $_POST[ 'reg_action' ];
 
 if ( $_SERVER[ 'REQUEST_METHOD' ] === "POST" ) {
-	$message = "Inside server request method POST";
-	debug_log_message( $message, $debug );
-	if ( $reg_action == 'renew' ) {
-		$message = "Inside Registration Renewal Submit Post processing.";
-		debug_log_message( $message, $debug );
 
-		$renewal_data = process_update_metadata();
+	if ( $reg_action == 'renew' ) {
+
+		$renewal_data = process_update_metadata( $reg_action );
 
 		$form_user_data   = make_pretty( $renewal_data[ 'userdata' ] );
 		$member_meta_data = make_pretty( $renewal_data[ 'metadata' ] );
 
 	} else if ( $reg_action == 'new' || isset( $_POST[ 'registration' ] ) ) {
+
 		global $prime_members_id;
+
 		$prime_members_id = null;
 
-		$message = "Inside Registration Submit Post processing.";
-		debug_log_message( $message, $debug );
-
-		$registration_data = process_registration();
+		$registration_data = process_registration( $reg_action );
 
 		$form_user_data   = $registration_data[ 'userdata' ];
 		$member_meta_data = $registration_data[ 'metadata' ];
 
-		$verified_data = membership_data_merge( $registration_data );
+		foreach ( $member_meta_data as $memb_type_key => $memb_data ) {
+
+			$memb_id = $form_user_data[ $memb_type_key ][ 'ID' ];
+
+			if ( isset( $memb_id ) && ! empty( $memb_id ) ) {
+				add_members_metadata( $memb_data, $memb_id );
+			}
+		}
+
 	} else if ( isset( $_POST[ 'update' ] ) ) {
-		$message = "Inside Registration Review Update Page Post processing.";
-		debug_log_message( $message, $debug );
 
 		$updated_registration_data = process_update_metadata();
 
 		$form_user_data   = $updated_registration_data[ 'userdata' ];
 		$member_meta_data = $updated_registration_data[ 'metadata' ];
 	}
-
 
 	$mb_id        = $member_meta_data[ 'mb' ][ 'mb_id' ];
 	$memb_type_id = $member_meta_data[ 'mb' ][ 'membership_type' ];
@@ -595,9 +593,8 @@ debug_log_message( $message, $debug ); ?>
                             <fieldset class="screen">
                                 <legend class="screen"><span class="memb_legend"> Update</span>
                                 </legend>
-                                <div class="screen">If you {
-                                    have} made any changes to the form please
-                                    click:
+                                <div class="screen">
+                                    If you've made any changes to the form please click:
                                 </div>
                                 <div>
                                     <input class="ctxphc_button3 screen" id="reg_submit"
@@ -730,8 +727,8 @@ debug_log_message( $message, $debug ); ?>
                                     </div>
                                 </div>
 
-
                                 <div class="cont_rt_col">
+
                                     <div>
                                         <form id="regForm" name="regForm" method="post"
                                               action="<?php bloginfo( 'url' ); ?>?page_id=1572">

@@ -45,18 +45,14 @@ get_header(); ?>
 					</div>
 
 					<?php if ( $display_reg_warning ) { ?>
-						<div class="warning">Currently our registration form is not working correctly. We are aware of this issue and
-							are actively working to resolve this as quick as possible. In the mean time please contact our <a href="mailto:<?php echo
-							antispambot( 'membership@ctxphc.com' ); ?> ">Membership Director</a> and let them know you are interested in joining.
+						<div class="warning">Currently our registration form is not working correctly. We are aware of this issue and are actively working to resolve this as quick as possible. In the mean time please contact our <a href="mailto:<?php echo antispambot( 'membership@ctxphc.com' ); ?> ">Membership Director</a> and let them know you are interested in joining.
 						</div>
 					<?php } ?>
 					<p class="ctxphc_reg_txt">So, you've decided you want to join in our mission to Party with a Purpose,
 						have PHun and help the community? If so, <img class="alignright wp-image-7" title="membership-image"
 						                                              src="<?php echo get_template_directory_uri();
 						                                              ?>/includes/images/membership-image.jpg"
-						                                              alt="ctxphc membership image"/>you
-						can complete the application below and make a payment using PayPal or print
-						out the application and mail a check to:</p>
+						                                              alt="ctxphc membership image"/>you can complete the application below and make a payment using PayPal or print out the application and mail a check to:</p>
 
 					<p class="ctxphc_reg_txt">
 						Central Texas Parrot Head Club<br/>
@@ -65,12 +61,7 @@ get_header(); ?>
 						Austin, TX 78708
 					</p>
 
-					<p class="ctxphc_reg_txt">Membership entitles you to attend our numerous monthly events; an official club badge; access to the
-						monthly CTXPHC
-						newsletter
-						and ParrotHead-related electronic bulletins. The newsletter and bulletins keep you up-to-date regarding local, regional and
-						statewide PHlockings (which you would be eligible to attend); community events; special discounts; concert news; VIP passes
-						and much more!</p>
+					<p class="ctxphc_reg_txt">Membership entitles you to attend our numerous monthly events; an official club badge; access to the monthly CTXPHC newsletter and ParrotHead-related electronic bulletins. The newsletter and bulletins keep you up-to-date regarding local, regional and statewide PHlockings (which you would be eligible to attend); community events; special discounts; concert news; VIP passes and much more!</p>
 
 					<p class="ctxphc_reg_txt">If you have any questions, contact our <a
 							href="mailto:<?php echo antispambot( 'membership@ctxphc.com' ); ?>">Membership
@@ -78,13 +69,9 @@ get_header(); ?>
 
 					<p class="ctxphc_reg_txt">If you are ready to join in the PHun, scroll down and fill out our registration form!</p>
 
-					<p class="ctxphc_reg_txt"><strong>NOTE: If this is a renewal, login to your profile and click on the
-							"Renew Membership" button. If you don't know how to login, send email to
-							the <a href="mailto:<?php echo antispambot( 'support@ctxphc.com' ); ?>">CTXPHC Support
-								Staff</a>.</strong></p>
+					<p class="ctxphc_reg_txt"><strong>NOTE: If this is a renewal, login to your profile and click on the "Renew Membership" button. If you don't know how to login, send email to the <a href="mailto:<?php echo antispambot( 'support@ctxphc.com' ); ?>">CTXPHC Support Staff</a>.</strong></p>
 
 					<div class="spacer"></div>
-
 
 					<div class="reg_form_row" id="mem_reg_types">
 						<h4>Membership Types:</h4>
@@ -195,6 +182,7 @@ get_header(); ?>
 
 						<fieldset class="reg_form" id="spouse_info">
 							<legend><span class="memb_legend">Spouse/Partner</span></legend>
+
 							<div class="reg_form_row">
 								<label class="reg_first_name" id="lbl_sp_first_name" for="sp_first_name">First Name:</label>
 								<input class="reg_first_name validate[condRequired[memb_type]], custom[onlyLetterSp]]"
@@ -206,6 +194,7 @@ get_header(); ?>
 								       data-prompt-position="bottomLeft" id="sp_last_name" name="sp_last_name" type="text"
 								       value=""/>
 							</div>
+
 							<div class="reg_form_row">
 								<label class="cm_birthday" id="lbl_sp_birthday" for="sp_birthday">Birthdate:</label>
 								<input class="cm_birthday validate[condRequired[memb_type]] text-input datepicker" id="sp_birthday"
@@ -215,6 +204,7 @@ get_header(); ?>
 								<input class="reg_email validate[custom[email]]" data-prompt-position="bottomLeft"
 								       id="sp_email" name="sp_email" type="email" value=""/>
 							</div>
+
 							<div class="reg_form_row">
 								<label class="reg_phone" id="lbl_sp_phone" for="sp_phone">Phone:</label>
 								<input class="reg_phone validate[custom[onlyNumber]]" data-prompt-position="bottomLeft"
@@ -227,8 +217,8 @@ get_header(); ?>
 									<?php $defSel = 2 ?>
 									<?php echo showOptionsDrop( $relationship_types, $defSel, true ); ?>
 								</select>
-
 							</div>
+
 						</fieldset>
 
 						<div class="spacer" id="family_spacer"></div>
@@ -236,6 +226,7 @@ get_header(); ?>
 
 						<fieldset class="reg_form" id="family_info">
 							<legend><span class="memb_legend">Family Members</span></legend>
+
 							<section id="child1">
 								<div class="reg_form_row">
 									<label class="reg_first_name" for="c1_first_name">First Name:</label>
@@ -373,7 +364,7 @@ get_header(); ?>
 
 						<div>
 							<input class="ctxphc_button3 screen" id="reg_submit" type="submit" name="registration"
-							       value="Submit"/>
+							       value="new"/>
 						</div>
 
 					</form>

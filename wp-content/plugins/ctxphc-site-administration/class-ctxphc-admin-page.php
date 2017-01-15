@@ -118,7 +118,7 @@ class WPTuts_Simple_Metabox_Admin_Page {
 		?>
 		 <div class="wrap">
 
-			<?php screen_icon(); ?>
+			<?php get_screen_icon(); ?>
 
 			 <h2> <?php echo esc_html($this->title);?> </h2>
 

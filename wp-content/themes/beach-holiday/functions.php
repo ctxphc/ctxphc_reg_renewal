@@ -36,41 +36,45 @@ $max_children = 4;
  */
 function reg_custom_scripts_and_styles() {
 
-	//Register CTXPHC Custom Stylesheets
-	wp_register_style( 'ctxphc-custom-style', get_template_directory_uri() . '/includes/css/ctxphc-style.css' );
-	wp_register_style( 'ctxphc-print-style', get_template_directory_uri() . '/includes/css/ctxphc-print-style.css', '', '', "print" );
-	wp_register_style( 'pb_reg_styles', get_stylesheet_directory_uri() . '/includes/css/pb_reg_styles.css', array(), '1.0' );
-
-	// Enqueue CTXPHC custom stylesheets only on pages needed
-	wp_enqueue_style( 'ctxphc-custom-style' );
-
-	if ( is_page( 'pirates-ball-members-only-early-registration' ) || is_page( 'pirates-ball-early-registration' ) || is_page( 'pirates-ball-registration' ) || is_page( 'pirates-ball-private-registration' ) ) {
-		wp_enqueue_style( 'pb_reg_styles' );
-	}
-
-	//Register JQuery scripts
-	wp_register_script( 'validation-local', get_template_directory_uri() . '/includes/js/languages/jquery.validationEngine-en.js', '', true );
-	wp_register_script( 'validation-engine', get_template_directory_uri() . '/includes/js/jquery.validationEngine.js', '', true );
-	wp_register_style( 'validation-style', get_template_directory_uri() . '/includes/css/validationEngine.jquery.css' );
 	wp_register_script( 'mp-validation-script', get_template_directory_uri() . '/includes/js/mp-validation-script.js', array( 'jquery' ), '', true );
+	wp_enqueue_script( 'mp-validation-script' );
 
-	// Enqueue jQuery validation scripts
-	if ( is_page( array( 72, 122, 527, 532, 2594, 2691, 2546 ) ) ) {
-		wp_enqueue_script( 'mp-validation-script' );
-		wp_enqueue_script( 'validation-local' );
-		wp_enqueue_script( 'validation-engine' );
+	//Register JQuery Input Validation Rules in English
+	wp_register_script( 'validation-local', get_template_directory_uri() . '/includes/js/languages/jquery.validationEngine-en.js', '', true );
+	wp_enqueue_script( 'validation-local' );
+
+	//Register jQuery Input Validation Engine
+	wp_register_script( 'validation-engine', get_template_directory_uri() . '/includes/js/jquery.validationEngine.js', '', true );
+	wp_enqueue_script( 'validation-engine' );
+
+	//Register jQuery Input Validation CSS Stylesheet
+	wp_register_style( 'validation-style', get_template_directory_uri() . '/includes/css/validationEngine.jquery.css' );
+
+	wp_register_script( 'ctxphc-scripts', get_template_directory_uri() . '/includes/js/ctxphc-scripts.js', array( 'jquery' ), '', true );
+	if ( is_page( 'membership' ) ) {
+		wp_enqueue_script( 'ctxphc-scripts' );
+		wp_enqueue_style( 'validation-style' );
 	}
 
-	// Register CTXPHC custom scripts
-	wp_register_script( 'ctxphc-scripts', get_template_directory_uri() . '/includes/js/ctxphc-scripts.js', array( 'jquery' ), '', true );
 	wp_register_script( 'ctxphc-pb-script', get_template_directory_uri() . '/includes/js/ctxphc-pb-script.js', array( 'jquery' ), '', true );
 
-	// Enqueue CTXPHC Membership form styles and PB Ball form script
-	if ( is_page( array( 72, 122, 527, 532, 2594, 2691, 2546 ) ) ) {
+	if ( is_page( 'pirates-ball-members-only-early-registration' ) || is_page( 'pirates-ball-early-registration' ) || is_page( 'pirates-ball-registration' ) || is_page( 'pirates-ball-private-registration' ) ) {
+		wp_enqueue_script( 'ctxphc-pb-script' );
 		wp_enqueue_style( 'validation-style' );
-		if ( is_page( array( 2594, 2691, 2546 ) ) ) {
-			wp_enqueue_script( 'ctxphc-pb-script' );
-		}
+	}
+
+	//Register CTXPHC Custom CSS Stylesheet
+	wp_register_style( 'ctxphc-custom-style', get_template_directory_uri() . '/includes/css/ctxphc-style.css' );
+	wp_enqueue_style( 'ctxphc-custom-style' );
+
+	//Register CTXPHC CSS Print Stylesheet
+	wp_register_style( 'ctxphc-print-style', get_template_directory_uri() . '/includes/css/ctxphc-print-style.css', '', '', "print" );
+	wp_enqueue_style( 'ctxphc-print-style' );
+
+	//Register CTXPHC Pirates Ball Registration Custom CSS Stylesheet
+	wp_register_style( 'pb_reg_styles', get_stylesheet_directory_uri() . '/includes/css/pb_reg_styles.css', array(), '1.0' );
+	if ( is_page( 'pirates-ball-members-only-early-registration' ) || is_page( 'pirates-ball-early-registration' ) || is_page( 'pirates-ball-registration' ) || is_page( 'pirates-ball-private-registration' ) ) {
+		wp_enqueue_style( 'pb_reg_styles' );
 	}
 }
 
@@ -275,13 +279,6 @@ function make_date_safe( $date ) {
 	return $fixed_safe_date;
 }
 
-function fix_users_relationship_status( $usr_id, $meta_key ) {
-	//remove record from database
-	if ( ! delete_user_meta( $usr_id, $meta_key ) ) {
-		// write error message to log file.
-	}
-}
-
 function load_reg_types() {
 	global $reg_types;
 	$reg_types = array(
@@ -326,7 +323,18 @@ function get_associated_member_types() {
 function get_associated_member_id_keys( $mtype ) {
 	switch ( $mtype ) {
 		case 'mb':
-			$id_keys = array( 'wp_user_id', 'sp_id', 'c1_id', );
+			$id_keys = array(
+				'wp_user_id',
+				'sp_id',
+				'c1_id',
+				'c2_id',
+				'c3_id',
+				'c4_id',
+				'fam_memb_id_1',
+				'fam_memb_id_2',
+				'fam_memb_id_3',
+				'fam_memb_id_4',
+			);
 			break;
 		case 'sp':
 			$id_keys = array( 'wp_user_id', 'mb_id', 'membUserID', 'prim_memb_id', );
@@ -353,12 +361,12 @@ function is_prime_member( $curusr_id, $assoc_usr_id, $assoc_memb_type ) {
 
 function get_primary_member_id( $cur_metadata ) {
 
-	if ( isset( $cur_metadata[ 'membUserID' ] ) && ! empty( $cur_metadata[ 'membUserID' ] ) ) {
-		$prime_memb_id = $cur_metadata[ 'membUserID' ][ 0 ];
-	} else if ( isset( $cur_metadata[ 'prim_memb_id' ] ) && ! empty( $cur_metadata[ 'prim_memb_id' ] ) ) {
-		$prime_memb_id = $cur_metadata[ 'prim_memb_id' ][ 0 ];
-	} else if ( isset( $cur_metadata[ 'mb_id' ] ) && ! empty( $cur_metadata[ 'mb_id' ] ) ) {
-		$prime_memb_id = $cur_metadata[ 'mb_id' ][ 0 ];
+	foreach ( get_associated_member_keys() as $key ) {
+		if ( $key == 'prim_memb_id' || ( $cur_metadata->__isset( $key ) && ! empty( $cur_metadata->__get( $key ) ) ) ) {
+
+			$prime_memb_id = $cur_metadata->__get( $key );
+			break;
+		}
 	}
 
 	return $prime_memb_id;
@@ -641,9 +649,9 @@ function process_update_metadata( $reg_action ) {
 
 				$result = update_members_metadata( $cur_memb_id, $member_meta_key, $member_meta_value, $prev_value );
 
-				if ( is_wp_error( $result ) ){
-				    //Do something with this
-                }
+				if ( is_wp_error( $result ) ) {
+					//Do something with this
+				}
 			}
 		}
 	}
@@ -791,6 +799,7 @@ function clean_new_reg_form_input() {
 		'membership_type' => intval( $_POST[ 'memb_type' ] ),
 		'addr1'           => sanitize_text_field( $_POST[ 'mb_addr1' ] ),
 		'addr2'           => sanitize_text_field( $_POST[ 'mb_addr2' ] ),
+		'address'         => sanitize_text_field( $_POST[ 'mb_addr1' ] ) . ' ' . sanitize_text_field( $_POST[ 'mb_addr2' ] ),
 		'city'            => sanitize_text_field( $_POST[ 'mb_city' ] ),
 		'state'           => sanitize_text_field( $_POST[ 'mb_state' ] ),
 		'zip'             => sanitize_text_field( $_POST[ 'mb_zip' ] ),
@@ -996,9 +1005,9 @@ function update_members_metadata( $user_id, $meta_key, $meta_value, $prev_value 
 	} else {
 
 		$return_value = true;
-    }
+	}
 
-    return $return_value;
+	return $return_value;
 }
 
 
@@ -1276,82 +1285,9 @@ function get_types( $table ) {
 
 }
 
-function load_form_data_map() {
-	$form_data_map = array(
-		/*
-		 "memb_type_1" => "memb_type_1",
-		"memb_type_2" => "memb_type_2",
-		"memb_type_3" => "memb_type_3",
-		"memb_type_4" => "memb_type_4",
-		*/
-
-
-		// user_data
-		"first_name" => "first_name",
-		"last_name"  => "last_name",
-		"email"      => "email",
-
-
-		//user_meta
-		"phone"      => "phone",
-		"birthday"   => "birthday",
-		"bday"       => "birthday",
-
-		"addr1"      => "mb_addr1",
-		"addr2"      => "mb_addr2",
-		"city"       => "mb_city",
-		"state"      => "mb_state",
-		"zip"        => "mb_zip",
-		"occupation" => "mb_occupation",
-
-		"mb_first_name" => "mb_first_name",
-		"mb_last_name"  => "mb_last_name",
-		"mb_birthday"   => "mb_birthday",
-		"mb_email"      => "mb_email",
-		"mb_phone"      => "mb_phone",
-		"mb_occupation" => "mb_occupation",
-		"mb_addr1"      => "mb_addr1",
-		"mb_addr2"      => "mb_addr2",
-		"mb_city"       => "mb_city",
-		"mb_state"      => "mb_state",
-
-		"sp_first_name"   => "sp_first_name",
-		"sp_last_name"    => "sp_last_name",
-		"sp_birthday"     => "sp_birthday",
-		"sp_email"        => "sp_email",
-		"sp_phone"        => "sp_phone",
-		"sp_relationship" => "sp_relationship",
-
-		"c1_first_name"   => "c1_first_name",
-		"c1_last_name"    => "c1_last_name",
-		"c1_bday"         => "c1_birthday",
-		"c1_relationship" => "c1_relationship",
-		"c1_email"        => "c1_email",
-
-		"c2_first_name"   => "c2_first_name",
-		"c2_last_name"    => "c2_last_name",
-		"c2_bday"         => "c2_birthday",
-		"c2_relationship" => "c2_relationship",
-		"c2_email"        => "c2_email",
-
-		"c3_first_name"   => "c3_first_name",
-		"c3_last_name"    => "c3_last_name",
-		"c3_bday"         => "c3_birthday",
-		"c3_relationship" => "c3_relationship",
-		"c3_email"        => "c3_email",
-
-		"c4_first_name"   => "c4_first_name",
-		"c4_last_name"    => "c4_last_name",
-		"c4_bday"         => "c4_birthday",
-		"c4_relationship" => "c4_relationship",
-		"c4_email"        => "c4_email",
-	);
-
-	return ( $form_data_map );
-}
-
 function map_metadata_to_form_fields( $type ) {
 	global $max_children;
+	$splt_type = str_split($type);
 	// metadata field => form field
 	switch ( $type ) {
 		case 'mb':
@@ -1361,9 +1297,7 @@ function map_metadata_to_form_fields( $type ) {
 			$field_map = get_sp_field_map();
 			break;
 		default:
-			for ( $c = 1; $c <= $max_children; $c ++ ) {
-				$field_map = get_child_field_map( $type, $c );
-			}
+			$field_map = get_child_field_map( $type, $splt_type[1] );
 			break;
 	}
 
@@ -1501,6 +1435,7 @@ function get_sp_field_map() {
 		"relationship_id"    => "sp_relationship",
 		"sp_relationship_id" => "sp_relationship",
 		"sp_relationship"    => "sp_relationship",
+		"sp_id"              => "sp_id",
 		"fam_memb_id_1"      => "sp_id",
 		"wp_user_id"         => "sp_id",
 		"membUserID"         => 'mb_id',
@@ -1509,22 +1444,23 @@ function get_sp_field_map() {
 	return $mapped_fields;
 }
 
-function get_child_field_map( $type, $counter ) {
+function get_child_field_map( $ctype, $counter ) {
 
 	$mapped_fields = array(
-		"first_name"      => "{$type}_first_name",
-		"last_name"       => "{$type}_last_name",
-		"email"           => "{$type}_email",
-		"birthday"        => "{$type}_birthday",
-		"relationship"    => "{$type}_relationship",
-		"relationship_id" => "{$type}_relationship",
+		"first_name"      => "{$ctype}_first_name",
+		"last_name"       => "{$ctype}_last_name",
+		"email"           => "{$ctype}_email",
+		"birthday"        => "{$ctype}_birthday",
+		"relationship"    => "{$ctype}_relationship",
+		"relationship_id" => "{$ctype}_relationship",
+		"c{$counter}_id"                 => "{$ctype}_id",
 
-		"fam_{$counter}_first_name"      => "{$type}_first_name",
-		"fam_{$counter}_last_name"       => "{$type}_last_name",
-		"fam_{$counter}_email"           => "{$type}_email",
-		"fam_{$counter}_birthday"        => "{$type}_birthday",
-		"fam_{$counter}_relationship_id" => "{$type}_relationship",
-		"fam_memb_id_{$counter}"         => "{$type}_id",
+		"fam_{$counter}_first_name"      => "{$ctype}_first_name",
+		"fam_{$counter}_last_name"       => "{$ctype}_last_name",
+		"fam_{$counter}_email"           => "{$ctype}_email",
+		"fam_{$counter}_birthday"        => "{$ctype}_birthday",
+		"fam_{$counter}_relationship_id" => "{$ctype}_relationship",
+		"fam_memb_id_{$counter}"         => "{$ctype}_id",
 	);
 
 	return $mapped_fields;
@@ -1534,8 +1470,27 @@ function get_relationship_keys() {
 	$relationship_keys = array(
 		"relationship",
 		"relationship_id",
-		"sp_relationship_id",
-		"sp_relationship",
+		"relationship_type",
+		"mb_relationship",
+
+		'sp_relationship',
+		'sp_relationship_id',
+		'c1_relationship',
+		'c1_relationship_id',
+
+		'c2_relationship',
+		'c2_relationship_id',
+
+		'c3_relationship',
+		'c3_relationship_id',
+
+		'c4_relationship',
+		'c4_relationship_id',
+
+		'fam_1_relationship_id',
+		'fam_2_relationship_id',
+		'fam_3_relationship_id',
+		'fam_4_relationship_id',
 	);
 
 	return $relationship_keys;
@@ -1559,13 +1514,17 @@ function member_relationship_value_map() {
 	return $rel_val_map;
 }
 
-function map_rel_values_to_form_values( $cur_rel_value ) {
+function map_rel_values_to_form_values( $user_rel_value ) {
 	$rel_values = member_relationship_value_map();
 
 	foreach ( $rel_values as $rel_key => $rel_value ) {
-		if ( $cur_rel_value == $rel_value ) {
+
+		if ( $user_rel_value == $rel_value ) {
+
 			$return_rel_value = $rel_value;
-		} else if ( $cur_rel_value == $rel_key ) {
+
+		} else if ( $user_rel_value == $rel_key ) {
+
 			$return_rel_value = $rel_value;
 		}
 	}
@@ -1573,21 +1532,206 @@ function map_rel_values_to_form_values( $cur_rel_value ) {
 	return $return_rel_value;
 }
 
-function member_membership_type_value_map() {
+function get_member_type_keys() {
+	$memb_type_keys = array(
+		"membership",
+		"membership_id",
+		"membership_type",
+		"mb_membership_type",
+		"memb_type",
+		"user_memb_type",
+	);
+
+	return $memb_type_keys;
+}
+
+function get_membership_type_value_map() {
 	$memb_val_map = array(
-		'ID'     => 1,
-		'IC'     => 2,
-		'CO'     => 3,
-		'HH'     => 4,
+		'ID' => 1,
+		'IC' => 2,
+		'CO' => 3,
+		'HH' => 4,
+
 		'Single' => 1,
 		'Couple' => 3,
 		'Family' => 4,
-		'S'      => 1,
-		'C'      => 3,
-		'F'      => 4,
+
+		'S' => 1,
+		'C' => 3,
+		'F' => 4,
 	);
 
 	return $memb_val_map;
+}
+
+function validate_membership_type( $memb_data ) {
+
+	$update_status = null;
+
+	$memb_id = $memb_data->get( 'ID' );
+
+	$membership_type_map = get_membership_type_value_map();
+
+	foreach ( get_member_type_keys() as $mtype_key ) {
+
+		if ( $memb_data->__isset( $mtype_key ) ) {
+
+			$mtype_value = $memb_data->__get( $mtype_key );
+
+			foreach ( $membership_type_map as $mmtype_key => $mmtype_value ) {
+
+				if ( $mtype_key == 'membership_id' || $mtype_key == 'membership_type' ) { //Changing this to membership_type
+
+					if ( $mmtype_value == $mtype_value || $mtype_value == $mmtype_key ) {
+
+						update_user_meta( $memb_id, 'membership_type', $mmtype_value );
+					}
+				}
+
+				if ( $mtype_value == $mmtype_key && $mtype_key <> 'membership_type' ) {
+
+					delete_user_meta( $memb_id, $mtype_key );
+				}
+			}
+		}
+	}
+
+	$updated_member_data = get_userdata( $memb_id );
+
+	return $updated_member_data;
+}
+
+function validate_relationship_type( $memb_data ) {
+	global $memb_error;
+
+	$update_status = null;
+
+	$memb_id = $memb_data->get( 'ID' );
+
+	foreach ( get_relationship_keys() as $rel_key ) {
+
+		if ( $memb_data->__isset( $rel_key ) ) {
+
+			// get member's relationship meta_key value
+			$prev_rel_value = $memb_data->__get( $rel_key );
+
+			// Using map of relationship keys to values
+			// Get the correct meta_key value for the relationship_id meta_key
+			$new_rel_value = map_rel_values_to_form_values( $prev_rel_value );
+
+			if ( ! $memb_data->__isset( 'relationship_id' ) ) {
+
+				// Add/Update member's relationship_id meta_key and value
+				$update = update_user_meta( $memb_id, 'relationship_id', $new_rel_value );
+
+				if ( ! $update ) {
+
+					// Failed update of the relationship_id meta_key
+					$code      = 'failed_update_relationship_id';
+					$error_msg = "Member {$memb_id} relationship_id meta_key update failed.";
+					$memb_error->add( $code, $error_msg );
+					error_log_message( $memb_error->get_error_message( $code ) );
+					unset( $code, $error_msg );
+				}
+			}
+
+			// If the relationship meta_key was not relationship_id
+			// Delete it from the member's metadata
+			if ( $rel_key <> 'relationship_id' ) {
+
+				// Remove the invalid relationship meta_key and value
+				if ( ! delete_user_meta( $memb_id, $rel_key ) ) {
+
+					// Failed deletion of the invalid relationship metadata
+					$code      = 'failed_delete_meta_key_' . $rel_key;
+					$error_msg = "Failed to delete Member {$memb_id} metadata record {$rel_key}.";
+					$memb_error->add( $code, $error_msg );
+					error_log_message( $memb_error->get_error_message( $code ) );
+					unset( $code, $error_msg );
+
+				} else {
+
+					// Successful deletion of the invalid relationship metadata
+					$code      = 'success_delete_meta_key_' . $rel_key;
+					$error_msg = "Successfully deleted member {$memb_id} metadata record {$rel_key}.";
+					$memb_error->add( $code, $error_msg );
+					error_log_message( $memb_error->get_error_message( $code ) );
+					unset( $code, $error_msg );
+				}
+			}
+
+		}
+	}
+
+	$updated_member_data = get_userdata( $memb_id );
+
+	return $updated_member_data;
+}
+
+function validate_member_ids( $memb_data, $key_memb_id ) {
+	global $max_children;
+
+	$memb_id = $memb_data->get( 'ID' );
+
+	$key_memb_data = get_userdata( $key_memb_id );
+
+	if ( $key_memb_data->__isset( 'relationship_type' ) ) {
+
+		$key_memb_relationship_value = $key_memb_data->__get( 'relationship_type' );
+
+	} elseif ( $key_memb_data->__isset( 'relationship_id' ) ) {
+
+		$key_memb_relationship_value = $key_memb_data->__get( 'relationship_id' );
+	}
+
+	// If the key member is a spouse/partner or other
+	// set memb_data sp_id to key_memb_id.
+	if ( $key_memb_relationship_value <> 1 && $key_memb_relationship_value <> 4 ) {
+
+		update_user_meta( $memb_id, 'sp_id', $key_memb_id );
+
+		if ( $memb_data->__isset( 'fam_memb_id_1' ) ) {
+			delete_user_meta( $memb_id, 'fam_memb_id_1' );
+		}
+
+	} elseif ( $key_memb_relationship_value == 4 ) {
+
+		for ( $c = 1; $c <= $max_children; $c ++ ) {
+			$ctag  = "c{$c}";
+			$c1    = $c - 1;
+			$ctag1 = "c{$c1}";
+
+			$child_key  = $ctag . '_id';
+			$child1_key = $ctag1 . '_id';
+			$fam_id_key = "fam_memb_id_{$c}";
+
+			if ( $key_memb_data->__isset( $child_key ) || $key_memb_data->__isset( $fam_id_key ) ) {
+
+				update_user_meta( $memb_id, $child_key, $key_memb_id );
+
+				if ( $memb_data->__isset( $fam_id_key ) ) {
+					delete_user_meta( $memb_id, $fam_id_key );
+				}
+
+			} elseif ( $memb_data->__isset( $child_key ) || $memb_data->__isset( $fam_id_key ) ) {
+
+				//update_user_meta( $memb_id, $child1_key, $key_memb_id );
+				//update_user_meta( $key_memb_id, $child1_key, $key_memb_id );
+
+				if ( $memb_data->__isset( $fam_id_key ) ) {
+					delete_user_meta( $memb_id, $fam_id_key );
+				}
+			}
+		}
+
+	} elseif ( ! $memb_data->__isset( 'mb_id' ) ) {
+
+		update_user_meta( $memb_id, 'mb_id', $key_memb_id );
+	}
+
+	$updated_member_data = get_userdata( $memb_id );
+
+	return $updated_member_data;
 }
 
 /**
@@ -1596,7 +1740,7 @@ function member_membership_type_value_map() {
  * @return int|mixed|string
  */
 function map_memb_values_to_form_values( $cur_memb_value ) {
-	$memb_values = member_membership_type_value_map();
+	$memb_values = get_membership_type_value_map();
 
 	foreach ( $memb_values as $memb_key => $memb_value ) {
 		if ( $cur_memb_value == $memb_value ) {
@@ -1610,6 +1754,7 @@ function map_memb_values_to_form_values( $cur_memb_value ) {
 }
 
 function map_metadata_to_input_form_fields( $metadata_field_map, $usr_metadata ) {
+
 	foreach ( $metadata_field_map as $meta_field_key => $form_field_key ) {
 
 		foreach ( $usr_metadata as $usr_meta_key => $usr_meta_value ) {
@@ -1631,6 +1776,107 @@ function map_metadata_to_input_form_fields( $metadata_field_map, $usr_metadata )
 	return $metadata_fields;
 }
 
+function get_member_id_keys() {
+	$member_id_keys = array(
+		'mb_id',
+		'prim_memb_id',
+		'sp_id',
+		'c1_id',
+		'c2_id',
+		'c3_id',
+		'c4_id',
+
+		'membUserID',
+		'user_id',
+		'wp_user_id',
+		'sp_wp_user_id',
+		'fam_memb_id_1',
+		'fam_memb_id_2',
+		'fam_memb_id_3',
+		'fam_memb_id_4',
+	);
+
+	return $member_id_keys;
+}
+
+function get_user_relationship_data( $user_id ) {
+	global $wpdb;
+
+	$relationship_data = $wpdb->get_results( $wpdb->prepare( "SELECT  user_id, meta_key, meta_value 
+FROM ctxphcco_wp_db . ctxphc_usermeta
+WHERE user_id = %d
+AND meta_key IN( 
+    'relationship',
+    'relationship_id',
+    'mb_relationship'
+    'sp_relationship',
+    'sp_relationship_id',
+    'c1_relationship',
+    'c2_relationship',
+    'c3_relationship',
+    'c4_relationship',
+    'c1_relationship_id',
+    'c2_relationship_id',
+    'c3_relationship_id',
+    'c4_relationship_id',
+    'fam_1_relationship_id',
+    'fam_2_relationship_id',
+    'fam_3_relationship_id',
+    'fam_4_relationship_id'
+     )  
+ORDER BY user_id", $user_id ) );
+
+	return $relationship_data;
+}
+
+function get_user_membership_data( $user_id ) {
+	global $wpdb;
+
+	$membership_data = $wpdb->get_results( $wpdb->prepare( "SELECT  user_id, meta_key, meta_value FROM ctxphcco_wp_db . ctxphc_usermeta
+WHERE user_id = %d AND meta_key IN( 'membership',
+		'membership_id',
+		'membership_type',
+		'mb_membership_type',
+		'memb_type',
+		'user_memb_type' ) 
+ORDER BY user_id", $user_id ) );
+
+	return $membership_data;
+}
+
+function get_associated_member_ids( $user_id ) {
+	global $wpdb;
+	$associated_ids = array();
+
+	$associated_memb_records = $wpdb->get_results( $wpdb->prepare( "SELECT u.ID, m . user_id, m.meta_key, m.meta_value 
+FROM ctxphcco_wp_db . ctxphc_users u JOIN ctxphcco_wp_db . ctxphc_usermeta m
+WHERE u . ID = %d AND u.ID = m . meta_value AND m . meta_key IN( 
+        'mb_id',
+        'sp_id',
+        'c1_id',
+		'c2_id',
+		'c4_id',
+		'c4_id',
+		'prim_memb_id',
+		'membUserID',
+		'user_id',
+		'wp_user_id',
+		'sp_wp_user_id',		
+		'fam_memb_id_1',
+		'fam_memb_id_2',
+		'fam_memb_id_3',
+		'fam_memb_id_4'
+ ) AND u . ID > 999 AND m . user_id <> u . ID
+ORDER BY m . user_id", $user_id ) );
+
+	foreach ( $associated_memb_records as $associated_memb_record ) {
+		if ( ! in_array( $associated_memb_record->user_id, $associated_ids ) ) {
+			$associated_ids[] = $associated_memb_record->user_id;
+		}
+	}
+
+	return $associated_ids;
+}
 
 function map_state_values() {
 	$states_mapping = array(
@@ -1779,50 +2025,172 @@ function my_bulk_action_admin_notice() {
  */
 function ctxphc_custom_user_profile_fields( $user ) {
 	?>
-    <table class="form-table">
-        <tr>
-            <th>
-                <label for="tc_location"><?php _e( 'Location' ); ?></label>
-            </th>
-            <td>
-                <input type="text" name="tc_location" id="tc_location"
-                       value="<?php echo esc_attr( get_the_author_meta( 'tc_location', $user->ID ) ); ?>"
-                       class="regular-text"/>
-                <br><span
-                        class="description"><?php _e( 'Your location.', 'travelcat' ); ?></span>
-            </td>
-        </tr>
-        <tr>
-            <th>
-                <label for="tc_favorites"><?php _e( 'Favorites', 'travelcat' ); ?></label>
-            </th>
-            <td>
-                <input type="text" name="tc_favorites" id="tc_favorites"
-                       value="<?php echo esc_attr( get_the_author_meta( 'tc_favorites', $user->ID ) ); ?>"
-                       class="regular-text"/>
-                <br><span
-                        class="description"><?php _e( 'Can you share a few of your favorite places to be or to stay?', 'travelcat' ); ?></span>
-                <br><span
-                        class="description"><?php _e( 'Separate by commas.', 'travelcat' ); ?></span>
-            </td>
-        </tr>
-        <tr>
-            <th>
-                <label for="tc_travel_map"><?php _e( 'Travel map', 'travelcat' ); ?></label>
-            </th>
-            <td>
-                <input type="text" name="tc_travel_map" id="tc_travel_map"
-                       value="<?php echo esc_attr( get_the_author_meta( 'tc_travel_map', $user->ID ) ); ?>"
-                       class="regular-text"/>
-                <br><span
-                        class="description"><?php _e( 'Been there / Going there within a year / Wish list.', 'travelcat' ); ?></span>
-                <br><span
-                        class="description"><?php _e( 'Separate by commas.', 'travelcat' ); ?></span>
-            </td>
-        </tr>
-    </table>
+  <table class="form-table">
+    <tr>
+      <th>
+        <label for="tc_location"><?php _e( 'Location' ); ?></label>
+      </th>
+      <td>
+        <input type="text" name="tc_location" id="tc_location"
+               value="<?php echo esc_attr( get_the_author_meta( 'tc_location', $user->ID ) ); ?>"
+               class="regular-text"/>
+        <br><span
+            class="description"><?php _e( 'Your location.', 'travelcat' ); ?></span>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <label for="tc_favorites"><?php _e( 'Favorites', 'travelcat' ); ?></label>
+      </th>
+      <td>
+        <input type="text" name="tc_favorites" id="tc_favorites"
+               value="<?php echo esc_attr( get_the_author_meta( 'tc_favorites', $user->ID ) ); ?>"
+               class="regular-text"/>
+        <br><span
+            class="description"><?php _e( 'Can you share a few of your favorite places to be or to stay?', 'travelcat' ); ?></span>
+        <br><span
+            class="description"><?php _e( 'Separate by commas.', 'travelcat' ); ?></span>
+      </td>
+    </tr>
+    <tr>
+      <th>
+        <label for="tc_travel_map"><?php _e( 'Travel map', 'travelcat' ); ?></label>
+      </th>
+      <td>
+        <input type="text" name="tc_travel_map" id="tc_travel_map"
+               value="<?php echo esc_attr( get_the_author_meta( 'tc_travel_map', $user->ID ) ); ?>"
+               class="regular-text"/>
+        <br><span
+            class="description"><?php _e( 'Been there / Going there within a year / Wish list.', 'travelcat' ); ?></span>
+        <br><span
+            class="description"><?php _e( 'Separate by commas.', 'travelcat' ); ?></span>
+      </td>
+    </tr>
+  </table>
 	<?php
 }
 
 add_action( 'show_user_profile', 'ctxphc_custom_user_profile_fields' );
 add_action( 'edit_user_profile', 'ctxphc_custom_user_profile_fields' );
+
+
+function get_associated_members( $cur_user_id ) {
+	global $wpdb;
+
+	$assoc_memb_meta_query_args = array(
+		'order'    => 'ASC',
+		'order_by' => 'user_id',
+		'relation' => 'OR', // Optional, defaults to "AND"
+
+		array(
+			'key'     => 'mb_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'membUserID',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'prim_memb_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'user_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'wp_user_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'sp_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'sp_wp_user_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'c1_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'c2_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'c4_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'c4_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'fam_memb_id_1',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'fam_memb_id_2',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'fam_memb_id_3',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'fam_memb_id_4',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'membUserID',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'prim_memb_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'user_id',
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => 'wp_user_id',
+			'compare' => 'EXISTS',
+		),
+
+	);
+
+	$associated_ids = new WP_User_Query( $assoc_memb_meta_query_args );
+
+	return $associated_ids;
+}
+
+function get_all_users_missing_membership_type() {
+
+	$renewal_fields = array(
+		'ID',
+		'first_name',
+		'last_name',
+		'user_id',
+		'meta_key',
+		'meta_value',
+	);
+
+	$member_type_args = array(
+		'order'    => 'ASC',
+		'orderby'  => 'display_name',
+		'relation' => 'OR', // Optional, defaults to "AND"
+		array(
+			'key'     => 'membership_type',
+			'value'   => array( 1, 2, 3, 4, 'Single', 'Couple', 'Family', 'S', 'C', 'F', 'ID', 'IC', 'CO', 'HH' ),
+			'compare' => 'NOT EXISTS',
+			'fields'  => $renewal_fields,
+		),
+
+	);
+
+	$memberships = new WP_User_Query( $member_type_args );
+
+	return $memberships;
+}

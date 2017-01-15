@@ -143,13 +143,19 @@ function membership_admin_message( $class = 'updated', $message = '' ) {
  * @since 0.1.0
  *
  * @param $action string Additional action to add to the nonce.
+ *
+ * @var string $return_value
+ * @return string
  */
 function membership_get_nonce( $action = '' ) {
 	if ( $action ) {
-		return "members-component-action_{$action}";
+		$return_value = "members-component-action_{$action}";
 	} else {
-		return "members-plugin";
+		$return_value = "members-plugin";
 	}
+
+
+	return $return_value;
 }
 
 /**

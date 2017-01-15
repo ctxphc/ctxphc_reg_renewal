@@ -2,7 +2,7 @@
 /*
 Plugin Name: CTXPHC Site Administration
 Plugin URI: http://kaptkaos.com/ctxphc_admin_plugin
-Description: The CTXPHC Site Administation Plug-in
+Description: The CTXPHC Site Administration Plug-in
 Version: 1.2
 Author: Ken Kilgore
 Author URI: http://kaptkaos.com

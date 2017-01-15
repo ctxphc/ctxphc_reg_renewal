@@ -33,7 +33,7 @@
 		} */
 		wp_head(); 
 	?>
-	<script type="text/javascript" src="<?php bloginfo();?>"></script>
+	<script type="text/javascript" src="<?php bloginfo("template_directory");?>/includes/js/templatelite-general.js"></script>	
 </head>
 <body> 
 <div id="bg_top"><div id="bg_btm">

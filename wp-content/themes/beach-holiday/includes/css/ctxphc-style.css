@@ -568,13 +568,6 @@ input.child_email {
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
 
-    /*
-    background: #a0c0e9;
-    background: -moz-linear-gradient(top, #a0c0e9 35%, #f2f6f9 50%, #ffbc47 51%, #a0c0e9 100%);
-    background: -webkit-gradient(linear, left top, left bottom, from(#a0c0e9), to(#f2f6f9), color-stop(0.4, #f2f6f9), color-stop(0.5, #fff), color-stop(.5, #ffbc47), color-stop(0.9, #a0c0e9));
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a0c0e9', endColorstr='#f2f6f9', GradientType=0 );
-    */
-
     background: #f5fafd; /* Old browsers */
     background: -moz-linear-gradient(top,  #f5fafd 53%, #e0e8ec 71%); /* FF3.6+ */
     background: -webkit-gradient(linear, left top, left bottom, color-stop(53%,#f5fafd), color-stop(71%,#e0e8ec)); /* Chrome,Safari4+ */
@@ -584,9 +577,8 @@ input.child_email {
     background: linear-gradient(to bottom,  #f5fafd 53%,#e0e8ec 71%); /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f5fafd', endColorstr='#e0e8ec',GradientType=0 ); /* IE6-9 */
 
-
     cursor: pointer;
-    width: 120px;
+    /* width: 120px; */
     display: block;
     margin: 0 auto;
 }

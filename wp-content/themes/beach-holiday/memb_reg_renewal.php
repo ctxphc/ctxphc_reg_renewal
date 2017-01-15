@@ -569,7 +569,7 @@ get_header();
           <div>
             <input class="ctxphc_button3 screen" id="reg_renew" type="submit"
                    name="renewal"
-                   value="renew"/>
+                   value="Submit Renewal"/>
           </div>
 
         </form>

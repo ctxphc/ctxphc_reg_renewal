@@ -3,17 +3,6 @@
 Template Name: Memb_Registration
 */
 
-/*
-$membership_types   = get_types( $membership_type_table );
-
-$relationship_keys   = get_relationship_keys();
-$relationship_id_map = member_relationship_value_map();
-$memb_rel_values     = member_relationship_value_map();
-
-$membership_type_map = get_membership_type_value_map();
-$membership_keys     = get_member_type_keys();
-*/
-
 global $defSel, $wpdb, $memb_error, $max_children;
 
 $memb_error = new WP_Error();
@@ -24,8 +13,10 @@ if ( ! is_user_logged_in() ) {
 	auth_redirect();
 } //User must be logged in to access this page!?
 
+
 $associate_ids   = array();
-$prime_member_id = null;
+$associated_members = array();
+$primary_member_id = null;
 $populate_form   = array();
 
 $reg_action = reg_type_renew();
@@ -47,6 +38,7 @@ $active_member_id = get_current_user_id();
 $active_member    = wp_get_current_user();
 
 #retrieve primary member data
+
 if ( ! $primary_member_id ) {
 	$primary_member_id = get_primary_member_id( $active_member );
 	$primary_member    = get_userdata( $primary_member_id );
@@ -77,6 +69,8 @@ $account_info[ 'mb' ] = $primary_member;
 
 // Begin Associated member's validation ------------------------------------------------------
 foreach ( $associated_members as $associated_member ) {
+
+    $am_key = null;
 
 	// validate associated member's relationship meta records
 	$associated_member = validate_relationship_type( $associated_member );
@@ -408,7 +402,7 @@ get_header();
               <div class="reg_form_row">
                 <label class="child_email" id="lbl_c1_email"
                        for="c1_email">Email:</label>
-                <input class="child_email validate[condRequired[c1_first_name], custom[email]]"
+                <input class="child_email validate[custom[email]]"
                        data-prompt-position="bottomLeft"
                        id="c1_email" name="c1_email" type="email"
                        value="<?php echo( isset( $populate_form[ "c1_email" ] ) ? $populate_form[ "c1_email" ] : "" ); ?>"/>
@@ -457,7 +451,7 @@ get_header();
               <div class="reg_form_row">
                 <label class="child_email" id="lbl_c2_email"
                        for="c2_email">Email:</label>
-                <input class="child_email validate[condRequired[c2_first_name], custom[email]]"
+                <input class="child_email validate[custom[email]]"
                        data-prompt-position="bottomLeft"
                        id="c2_email" name="c2_email" type="email"
                        value="<?php echo( isset( $populate_form[ "c2_email" ] ) ? $populate_form[ "c2_email" ] : "" ); ?>"/>
@@ -506,7 +500,7 @@ get_header();
               <div class="reg_form_row">
                 <label class="child_email" id="lbl_c3_email"
                        for="c3_email">Email:</label>
-                <input class="child_email validate[condRequired[c3_first_name],custom[email]]"
+                <input class="child_email validate[custom[email]]"
                        data-prompt-position="bottomLeft"
                        id="c3_email" name="c3_email" type="email"
                        value="<?php echo( isset( $populate_form[ "c3_email" ] ) ? $populate_form[ "c3_email" ] : "" ); ?>"/>
@@ -555,7 +549,7 @@ get_header();
               <div class="reg_form_row">
                 <label class="child_email" id="lbl_c4_email"
                        for="c4_email">Email:</label>
-                <input class="child_email validate[condRequired[c4_first_name], custom[email]]"
+                <input class="child_email validate[custom[email]]"
                        data-prompt-position="bottomLeft"
                        id="c4_email" name="c4_email" type="email"
                        value="<?php echo( isset( $populate_form[ "c4_email" ] ) ? $populate_form[ "c4_email" ] : "" ); ?>"/>
